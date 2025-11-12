@@ -51,7 +51,7 @@ class PaymentController extends Controller
     }
 
     // Afficher un paiement spécifique
-    public function show($id)
+    public function show(string $id)
     {
         try {
             $payment = Payment::findOrFail($id);

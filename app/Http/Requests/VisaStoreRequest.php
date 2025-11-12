@@ -31,7 +31,8 @@ class VisaStoreRequest extends FormRequest
             'processing_duration_min' => 'required|integer',
             'processing_duration_max' => 'required|integer',
             'status_mat' => 'required|in:single,married,divorced,widowed',
-            'age' => 'required|integer',
+            'age_min' => 'required|integer',
+            'age_max' => 'required|integer',
             'documents' => 'required|array',
             'documents.*' => 'string|max:255',
         ];

@@ -16,10 +16,7 @@ class MessageResource extends JsonResource
                 'email' => $this->user->email,
                 'role' => $this->user->role,
             ],
-            'visa_request' => [
-                'id' => $this->visaRequest->id,
-                'title' => $this->visaRequest->title ?? null,
-            ],
+            'visa_request_id' => $this->visa_request_id ?? null,
             'content' => $this->content,
             'status' => $this->status,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),

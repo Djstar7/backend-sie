@@ -6,43 +6,48 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\VisaStoreRequest;
 use App\Http\Requests\VisaStorestoreRequest;
 use App\Http\Requests\VisaUpdateRequest;
-use App\Http\Resources\RequiredDocumentResource;
 use App\Http\Resources\VisaResource;
 use App\Models\Country;
 use App\Models\CountryVisaType;
+use App\Models\Profil;
 use App\Models\RequiredDocument;
 use App\Models\User;
 use App\Models\VisaType;
-use DB;
-use Illuminate\Support\Carbon;
-use Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class VisaController extends Controller
 {
+    /**
+     * Enregistrement ou mise à jour d'un type de visa pour un pays.
+     */
     public function store(VisaStoreRequest $visaStoreRequest)
     {
         try {
-            $request = $visaStoreRequest->validated();
-            DB::transaction(function () use ($request) {
-                $country = Country::where('name', $request->country_name)->firstOrFail();
-                $visaType = VisaType::where('name', $request->visa_type_name)->firstOrFail();
+            $data = $visaStoreRequest->validated();
+
+            DB::transaction(function () use ($data) {
+                $country = Country::where('name', $data['country_name'])->firstOrFail();
+                $visaType = VisaType::where('name', $data['visa_type_name'])->firstOrFail();
 
                 $countryVisaType = CountryVisaType::updateOrCreate(
                     ['country_id' => $country->id, 'visa_type_id' => $visaType->id],
                     [
-                        'price_base' => $request->price_base,
-                        'price_per_child' => $request->price_per_child ?? 0,
-                        'processing_duration_min' => $request->processing_duration_min,
-                        'processing_duration_max' => $request->processing_duration_max,
+                        'price_base' => $data['price_base'],
+                        'price_per_child' => $data['price_per_child'] ?? 0,
+                        'processing_duration_min' => $data['processing_duration_min'],
+                        'processing_duration_max' => $data['processing_duration_max'],
                     ]
                 );
 
                 $documentIds = [];
-                foreach ($request->documents as $docName) {
+                foreach ($data['documents'] as $docName) {
                     $document = RequiredDocument::firstOrCreate([
                         'name' => $docName,
-                        'status_mat' => $request->status_mat,
-                        'age' => $request->age
+                        'status_mat' => $data['status_mat'] ?? null,
+                        'age_max' => $data['age_max'] ?? null,
+                        'age_min' => $data['age_min'] ?? null,
                     ]);
                     $documentIds[] = $document->id;
                 }
@@ -52,58 +57,75 @@ class VisaController extends Controller
 
             return response()->json(['message' => 'Visa et documents enregistrés avec succès'], 201);
         } catch (\Exception $e) {
-            Log::error('Erreur lors de l\'enregistrement du visa: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur serveur lors de l\'enregistrement du visa'], 500);
+            Log::error("Erreur lors de l'enregistrement du visa: " . $e->getMessage());
+            return response()->json([
+                'message' => "Erreur serveur lors de l'enregistrement du visa"
+            ], 500);
         }
     }
 
+    /**
+     * Récupération des documents requis pour un utilisateur donné selon son visa.
+     */
     public function storestore(VisaStorestoreRequest $visaStoreRequest)
     {
         try {
-            $request = $visaStoreRequest->validated();
-            $user = User::findOrFail($request->user_id);
-            $age = Carbon::parse($user->date_of_birth)->age;
+            $data = $visaStoreRequest->validated();
 
-            $country = Country::where('name', $request->country_dest_name)->firstOrFail();
-            $visaType = VisaType::where('name', $request->visa_type_name)->firstOrFail();
+            $user = User::with('profil')->findOrFail($data['user_id']);
+            $profil =  $user->profil;
+            $age = Carbon::parse($profil->date_of_birth)->age;
+
+            $country = Country::where('name', $data['country_dest_name'])->firstOrFail();
+            $visaType = VisaType::where('name', $data['visa_type_name'])->firstOrFail();
 
             $countryVisaType = CountryVisaType::where('country_id', $country->id)
                 ->where('visa_type_id', $visaType->id)
-                ->where('age_max', '>=', $age)
-                ->where('age_min', '<=', $age)
                 ->firstOrFail();
 
-            $documents = $countryVisaType->requiredDocuments()
-                ->where(function ($q) use ($user) {
-                    $q->whereNull('status_mat')->orWhere('status_mat', $user->status_mat);
+            // Chargement des documents filtrés selon statut matrimonial et âge
+            $countryVisaType->load(['requiredDocuments' => function ($q) use ($profil, $age) {
+                $q->where(function ($query) use ($profil) {
+                    $query->whereNull('status_mat')
+                        ->orWhere('status_mat', $profil->status_mat);
                 })
-                ->get();
+                    ->where('age_max', '>=', $age)
+                    ->where('age_min', '<=', $age)
+                    ->pluck('name');
+            }]);
 
             return response()->json([
-                'documents' => RequiredDocumentResource::collection($documents),
                 'data' => new VisaResource($countryVisaType),
-                'message' => 'Documents requis récupérés avec succès'
+                'message' => 'Documents requis récupérés avec succès',
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur récupération documents requis: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur serveur: ' . $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Erreur serveur: ' . $e->getMessage(),
+            ], 500);
         }
     }
 
-    public function update(VisaUpdateRequest $request, $countryVisaTypeId)
+    /**
+     * Mise à jour des informations d’un visa existant.
+     */
+    public function update(string $countryVisaTypeId, VisaUpdateRequest $request)
     {
         try {
             $validated = $request->validated();
+
             $countryVisaType = CountryVisaType::findOrFail($countryVisaTypeId);
             $countryVisaType->update($validated);
 
             return response()->json([
                 'data' => new VisaResource($countryVisaType),
-                'message' => 'Visa mis à jour avec succès'
+                'message' => 'Visa mis à jour avec succès',
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur mise à jour visa: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur serveur lors de la mise à jour du visa'], 500);
+            return response()->json([
+                'message' => 'Erreur serveur lors de la mise à jour du visa',
+            ], 500);
         }
     }
 }

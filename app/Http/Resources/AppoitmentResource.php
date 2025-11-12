@@ -24,7 +24,7 @@ class AppoitmentResource extends JsonResource
                 return [
                     'id' => $this->visaRequest->id,
                     'type' => $this->visaRequest->type ?? null,
-                    'country' => $this->visaRequest->country ?? null,
+                    'country' => $this->visaRequest->country->countryVisaTypes ?? null,
                 ];
             }),
         ];

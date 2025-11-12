@@ -7,6 +7,7 @@ use App\Http\Requests\ProfilRequest;
 use App\Http\Resources\ProfilResource;
 use App\Models\Profil;
 use App\Models\Country;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class ProfilController extends Controller
@@ -59,14 +60,29 @@ class ProfilController extends Controller
             return response()->json(['message' => 'Erreur serveur lors de la récupération du profil'], 500);
         }
     }
+    /**
+     * Affiche un profil spécifique
+     */
+    public function showUser(string $id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $profil = $user->profil;
+            return response()->json(new ProfilResource($profil));
+        } catch (\Exception $e) {
+            Log::error('Erreur showUserController: ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur serveur lors de la récupération de user du profil'], 500);
+        }
+    }
 
     /**
      * Met à jour un profil
      */
-    public function update(ProfilRequest $request, Profil $profil)
+    public function update(ProfilRequest $request, string $id)
     {
         try {
             $data = $request->validated();
+            $profil = Profil::findOrFail($id);
 
             if (isset($data['nationality'])) {
                 $country = Country::where('name', $data['nationality'])->first();

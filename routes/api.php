@@ -144,6 +144,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         Route::delete('/user/delete/{id}', [UserController::class, 'destroy']);
         Route::post('/profil/store', [ProfilController::class, 'store']);
+        Route::post('/profil/showuser/{id}', [ProfilController::class, 'showUser']);
         Route::put('/profil/update/{id}', [ProfilController::class, 'update']);
     });
 

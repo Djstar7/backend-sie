@@ -190,17 +190,22 @@ class UserController extends Controller
     public function logout(Request $request)
     {
         try {
-            Auth::guard('sanctum')->logout();
+            // Déconnecte l'utilisateur actuel
+            Auth::logout();
 
+            // Invalide la session actuelle
             $request->session()->invalidate();
+
+            // Regénère le token CSRF pour éviter les attaques
             $request->session()->regenerateToken();
 
-            return response()->json(['message' => 'Déconnexion réussie']);
+            return response()->json(['message' => 'Déconnexion réussie'], 200);
         } catch (\Exception $e) {
             Log::error('Erreur logout UserController: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la déconnexion'], 500);
         }
     }
+
 
     /**
      * Rafraîchir la session
@@ -264,7 +269,7 @@ class UserController extends Controller
     /**
      * Afficher un utilisateur
      */
-    public function show(string $id)
+    public function show($id)
     {
         try {
             $user = User::findOrFail($id);
