@@ -19,7 +19,7 @@ class VisaRequestFactory extends Factory
      */
     public function definition(): array
     {
-        $statuses = ['pending', 'approved', 'rejected'];
+        $statuses = ['pending', 'approved', 'rejected', 'processing', 'created'];
 
         return [
             'user_id' => User::inRandomOrder()->value('id'),

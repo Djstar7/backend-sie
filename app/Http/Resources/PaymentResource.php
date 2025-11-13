@@ -16,7 +16,7 @@ class PaymentResource extends JsonResource
             'method'         => $this->method,
             'currency'       => $this->currency,
             'status'         => $this->status,
-            'meta'           => $this->meta ? json_decode($this->meta) : null,
+            'meta'           => $this->meta ?? null,
             'created_at'     => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at'     => $this->updated_at->format('Y-m-d H:i:s'),
         ];

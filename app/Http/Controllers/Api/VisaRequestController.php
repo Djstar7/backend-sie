@@ -19,9 +19,9 @@ class VisaRequestController extends Controller
     {
         try {
             $visaRequests = VisaRequest::with(['user', 'originCountry', 'destinationCountry', 'visaType'])->get();
-            return response()->json([
-                'data' => VisaRequestResource::collection($visaRequests),
-            ]);
+            return response()->json(
+                ['data' => VisaRequestResource::collection($visaRequests)],
+            );
         } catch (\Exception $e) {
             Log::error('Erreur index VisaRequest: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la récupération des demandes'], 500);

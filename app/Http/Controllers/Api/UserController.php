@@ -31,7 +31,6 @@ class UserController extends Controller
 
             return response()->json([
                 'data' => UserResource::collection($users),
-                'message' => 'Liste des utilisateurs récupérée avec succès'
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur index UserController: ' . $e->getMessage());

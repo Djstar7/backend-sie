@@ -22,13 +22,13 @@ class PaymentController extends Controller
     public function index()
     {
         try {
-            $payments = Payment::latest()->get();
+            $payments = Payment::all()->sortByDesc('created_at');
 
             if ($payments->isEmpty()) {
                 return response()->json(['message' => 'Aucun paiement trouvé'], 404);
             }
 
-            return PaymentResource::collection($payments);
+            return response()->json(['data' => PaymentResource::collection($payments)]);
         } catch (\Exception $e) {
             Log::error('Erreur récupération des paiements : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la récupération des paiements'], 500);

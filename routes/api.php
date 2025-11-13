@@ -104,7 +104,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Routes seulement pour les admins
     Route::middleware(['role:admin'])->group(function () {
-        Route::get('/visarequest', [VisaController::class, 'index']);
+        Route::get('/visarequest', [VisaRequestController::class, 'index']);
         // Route::post('/document/store', [DocumentController::class,'store']);
 
         Route::put('/user/storecustombyadmin', [UserController::class, 'storeCustomByAdmin']);

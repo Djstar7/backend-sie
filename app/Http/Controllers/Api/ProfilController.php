@@ -8,6 +8,7 @@ use App\Http\Resources\ProfilResource;
 use App\Models\Profil;
 use App\Models\Country;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Log;
 
 class ProfilController extends Controller
@@ -66,9 +67,12 @@ class ProfilController extends Controller
     public function showUser(string $id)
     {
         try {
-            $user = User::findOrFail($id);
+            $user = User::with('profil')->findOrFail($id);
             $profil = $user->profil;
             return response()->json(new ProfilResource($profil));
+        } catch (ModelNotFoundException $e) {
+            Log::error('Utilisateur non trouvé dans showUserController: ' . $e->getMessage());
+            return response()->json(['message' => 'Utilisateur non trouvé'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur showUserController: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la récupération de user du profil'], 500);
