@@ -37,7 +37,7 @@ class AppoitmentUpdateByUserRequest extends FormRequest
     {
         return [
             'status.required' => 'Le statut du rendez-vous est requis.',
-            'status.in' => 'Le statut du rendez-vous doit être l\'un des suivants : pending, rescheduled, canceled, completed.',
+            'status.in' => 'Le statut du rendez-vous doit être l\'un des suivants : En cours, programmer, Annulle, completé.',
         ];
     }
 }

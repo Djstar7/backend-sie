@@ -33,16 +33,15 @@ class VisaRequestController extends Controller
     {
         try {
             $request = $visaRequestStoreRequest->validated();
-            $visaType = VisaType::where('name', $request->visa_type_name)->firstOrFail();
-            $nationality = Country::where('name', $request->nationality)->firstOrFail();
-            $countryDest = Country::where('name', $request->country_dest_name)->firstOrFail();
+            $visaType = VisaType::where('name', $request['visa_type_name'])->firstOrFail();
+            $nationality = Country::where('name', $request['nationality'])->firstOrFail();
+            $countryDest = Country::where('name', $request['country_dest_name'])->firstOrFail();
 
             $visaRequest = VisaRequest::create([
-                'user_id' => $request->user_id,
+                'user_id' => $request['user_id'],
                 'visa_type_id' => $visaType->id,
                 'origin_country_id' => $nationality->id,
                 'destination_country_id' => $countryDest->id,
-                'status' => $request->status ?? 'pending'
             ]);
 
             return response()->json([
@@ -75,6 +74,7 @@ class VisaRequestController extends Controller
         try {
             $visaRequests = VisaRequest::with(['user', 'originCountry', 'destinationCountry', 'visaType'])
                 ->where('user_id', $userId)
+                ->orderByDesc('updated_at')
                 ->get();
             return response()->json([
                 'data' => VisaRequestResource::collection($visaRequests),
@@ -91,8 +91,9 @@ class VisaRequestController extends Controller
     {
         try {
             $request = $visaRequestUpdateRequest->validated();
+            Log::info('Request VisaRequest Update', $request);
             $visaRequest = VisaRequest::findOrFail($id);
-            $visaRequest->update($request->only('status'));
+            $visaRequest->update(['status' => $request['status'] ?? $request->status]);
 
             return response()->json([
                 'data' => new VisaRequestResource($visaRequest),

@@ -12,8 +12,6 @@ class VisaResource extends JsonResource
             'id' => $this->id,
             'country' => $this->country?->name,
             'visa_type' => $this->visaType?->name,
-            'user_id' => $this->visaType?->visaRequest?->user_id,
-            'statut_mat' => $this->country?->profil?->statut_mat,
             'price_base' => $this->price_base,
             'price_per_child' => $this->price_per_child,
             'processing_duration_min' => $this->processing_duration_min,

@@ -27,7 +27,7 @@ return new class extends Migration
             $table->foreignUuid('destination_country_id')
                 ->constrained('countrys')
                 ->cascadeOnDelete();
-            $table->enum('status', ['created', 'pending', 'processing', 'approved', 'rejected'])
+            $table->enum('status', ['pending', 'processing', 'approved', 'rejected'])
                 ->default('pending');
             $table->timestamps();
         });

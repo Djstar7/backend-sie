@@ -13,13 +13,19 @@ use App\Http\Controllers\Api\{
     VisaController,
     VisaRequestController,
     VisaTypeController,
-    PaymentController
+    PaymentController,
+    ProfilController,
+    TestBugController
 };
-use App\Http\Controllers\Api\ProfilController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [UserController::class, 'register']);
 Route::post('/auth/login', [UserController::class, 'login']);
+Route::middleware(['auth:sanctum'])->post('/auth/refresh', function () {
+    return response()->json(['status' => 'ok']);
+});
+
+
 Route::get('/faqchat', [FaqChabotController::class, 'index']);
 
 // webhook / notification (POST - serveur -> serveur)
@@ -31,16 +37,13 @@ Route::get('/payment/return', [PaymentController::class, 'returnFromGateway'])->
 // polling status
 Route::get('/payment/status/{reference}', [PaymentController::class, 'checkStatus']);
 
+Route::get('/documentation', [DocumentationController::class, 'index']);
 
+Route::get('/dd', [UserController::class, 'dd']);
 
 // Groupe API avec Sanctum pour l’authentification
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/auth/logout', [UserController::class, 'logout']);
-
-    Route::post('/auth/refresh', function () {
-        return response()->json(['message' => 'session mis a jour avec succès']);
-    });
-
 
     Route::get('/document', [DocumentController::class, 'index']);
     Route::get('/document/show/{id}', [DocumentController::class, 'show']);
@@ -66,12 +69,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/payment/show/{id}', [PaymentController::class, 'show']);
     Route::put('/payment/update/{id}', [PaymentController::class, 'update']);
     Route::delete('/payment/delete/{id}', [PaymentController::class, 'destroy']);
+    Route::get('/profil/user/{id}', [ProfilController::class, 'showUser']);
+    Route::get('/ping', [TestBugController::class, 'ping']);
 
 
+    // Route::get('/profil/showuser/{id}', [ProfilController::class, 'showUser']);
     // Routes pour custom
     Route::middleware(['role:custom'])->group(function () {
         Route::post('/visarequest/store', [VisaRequestController::class, 'store']);
         Route::delete('/visarequest/delete/{id}', [VisaRequestController::class, 'destroy']);
+
+        Route::put('/user/storeprofil', [UserController::class, 'storeProfil']);
+        Route::put('/user/updateprofil/{id}', [UserController::class, 'updateProfil']);
 
         Route::post('/document/store', [DocumentController::class, 'store']);
         Route::delete('/document/delete/{id}', [DocumentController::class, 'destroy']);
@@ -87,10 +96,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Routes pour agents
     Route::middleware(['role:agent'])->group(function () {
+        Route::get('/visa-requests', [VisaController::class, 'index']);
+
         Route::post('/appoitment/store', [AppoitmentController::class, 'store']);
         Route::delete('/appoitment/delete/{id}', [AppoitmentController::class, 'destroy']);
 
         Route::get('/message', [MessageController::class, 'index']);
+
 
         Route::prefix('notification')->group(function () {
             Route::get('/', [NotificationController::class, 'index']);
@@ -104,10 +116,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Routes seulement pour les admins
     Route::middleware(['role:admin'])->group(function () {
-        Route::get('/visarequest', [VisaRequestController::class, 'index']);
         // Route::post('/document/store', [DocumentController::class,'store']);
 
         Route::put('/user/storecustombyadmin', [UserController::class, 'storeCustomByAdmin']);
+
+        Route::get('/visarequest', [VisaRequestController::class, 'index']);
 
         Route::get('/visa', [VisaController::class, 'index']);
         Route::post('/visa/store', [VisaController::class, 'store']);
@@ -133,19 +146,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/faqchat/delete/{id}', [FaqChabotController::class, 'destroy']);
 
 
-        Route::get('/visarequest', [VisaRequestController::class, 'index']);
+
         Route::get('/user', [UserController::class, 'index']);
+
+        // ProfilController routes accessible to admin
+        Route::apiResource('/profil', ProfilController::class)->except(['create', 'edit']);
     });
 
 
     Route::middleware(['role:admin|custom'])->group(function () {
-        Route::post('/user/store', [UserController::class, 'store']);
         Route::put('/user/update/{id}', [UserController::class, 'update']);
-
+        Route::post('/user/store', [UserController::class, 'store']);
         Route::delete('/user/delete/{id}', [UserController::class, 'destroy']);
+        Route::put('/user/update/{id}', [UserController::class, 'update']);
         Route::post('/profil/store', [ProfilController::class, 'store']);
-        Route::post('/profil/showuser/{id}', [ProfilController::class, 'showUser']);
-        Route::put('/profil/update/{id}', [ProfilController::class, 'update']);
+
+        Route::put('/user/updatecustombyadmin/{id}', [UserController::class, 'updateCustomByAdmin']);
     });
 
 

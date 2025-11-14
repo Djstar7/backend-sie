@@ -26,12 +26,12 @@ class ProfilFactory extends Factory
             'user_id' => User::inRandomOrder()->value('id'),
             'first_name' => $this->faker->firstName(),
             'last_name' => $this->faker->lastName(),
+            'phone' => $this->faker->phoneNumber(),
             'gender' => $this->faker->randomElement($genders),
-            'date_of_birth' => $this->faker->optional()->date('Y-m-d'),
-            'place_of_birth' => $this->faker->optional()->city(),
-            'status_mat' => $this->faker->optional()->randomElement($statuses),
+            'date_of_birth' => $this->faker->date('Y-m-d'),
+            'place_of_birth' => $this->faker->city(),
+            'status_mat' => $this->faker->randomElement($statuses),
             'country_id' => Country::inRandomOrder()->value('id'), // récupère un country_id random ou null si aucun pays en bdd
-
         ];
     }
 }

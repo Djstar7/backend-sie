@@ -14,7 +14,8 @@ class RequiredDocument extends Model
     protected $fillable = [
         'name',
         'status_mat',
-        'age',
+        'min_age',
+        'max_age',
     ];
 
     /**

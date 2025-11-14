@@ -62,7 +62,8 @@ class MessageController extends Controller
                 return response()->json(['message' => 'Aucun message trouvé'], 404);
             }
 
-            $agentMessages = $messages->filter(fn($msg) => $msg->user->role === 'agent')->values();
+            $agentMessages = $messages->filter(fn($msg) => $msg->user->roles->contains('name', 'agent'))->values();
+            Log::info('Messages des agents filtrés', $messages->toArray());
             $customMessages = $messages->filter(fn($msg) => $msg->visaRequest && $msg->visaRequest->user_id == $customId && $msg->user_id == $customId)->values();
 
             return response()->json([

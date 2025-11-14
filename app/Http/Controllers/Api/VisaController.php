@@ -31,6 +31,7 @@ class VisaController extends Controller
                 $country = Country::where('name', $data['country_name'])->firstOrFail();
                 $visaType = VisaType::where('name', $data['visa_type_name'])->firstOrFail();
 
+                // Création ou mise à jour du type de visa pour le pays
                 $countryVisaType = CountryVisaType::updateOrCreate(
                     ['country_id' => $country->id, 'visa_type_id' => $visaType->id],
                     [
@@ -43,12 +44,21 @@ class VisaController extends Controller
 
                 $documentIds = [];
                 foreach ($data['documents'] as $docName) {
-                    $document = RequiredDocument::firstOrCreate([
-                        'name' => $docName,
-                        'status_mat' => $data['status_mat'] ?? null,
-                        'age_max' => $data['age_max'] ?? null,
-                        'age_min' => $data['age_min'] ?? null,
-                    ]);
+                    $document = RequiredDocument::firstOrCreate(
+                        [
+                            'name' => $docName,
+                            'status_mat' => $data['status_mat'],
+                            'min_age' => $data['min_age'],
+                            'max_age' => $data['max_age'],
+                        ],
+                        [
+                            'name' => $docName,
+                            'status_mat' => $data['status_mat'],
+                            'min_age' => $data['min_age'],
+                            'max_age' => $data['max_age'],
+                        ]
+                    );
+
                     $documentIds[] = $document->id;
                 }
 
@@ -63,6 +73,7 @@ class VisaController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Récupération des documents requis pour un utilisateur donné selon son visa.
@@ -89,13 +100,15 @@ class VisaController extends Controller
                     $query->whereNull('status_mat')
                         ->orWhere('status_mat', $profil->status_mat);
                 })
-                    ->where('age_max', '>=', $age)
-                    ->where('age_min', '<=', $age)
-                    ->pluck('name');
+                    ->where('max_age', '>=', $age)
+                    ->where('min_age', '<=', $age);
             }]);
+
+
 
             return response()->json([
                 'data' => new VisaResource($countryVisaType),
+                'orthers' => ['status_mat' => $profil->status_mat,  'user_id' => $user->id, 'nationality' => $profil->country->name],
                 'message' => 'Documents requis récupérés avec succès',
             ]);
         } catch (\Exception $e) {

@@ -14,12 +14,13 @@ return new class extends Migration
         Schema::create('profils', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade')->unique();;
-            $table->string('first_name')->nullable();
-            $table->string('last_name')->nullable();
-            $table->enum('gender', ['male', 'female'])->nullable();
-            $table->string('date_of_birth')->nullable();
-            $table->string('place_of_birth')->nullable();
-            $table->enum('status_mat', ['single', 'married', 'divorced', 'widowed'])->nullable();
+            $table->string('first_name');
+            $table->string('last_name');
+            $table->string('phone');
+            $table->enum('gender', ['male', 'female']);
+            $table->string('date_of_birth');
+            $table->string('place_of_birth');
+            $table->enum('status_mat', ['single', 'married', 'divorced', 'widowed']);
             $table->foreignUuid('country_id')
                 ->constrained('countrys')
                 ->onDelete('cascade');

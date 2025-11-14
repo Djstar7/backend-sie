@@ -33,22 +33,31 @@ class DocumentController extends Controller
     }
 
     // Ajouter un document
-    public function store(DocumentStoreRequest $documentStoreRequest)
+    public function store(DocumentStoreRequest $request)
     {
         try {
-            $request = $documentStoreRequest->validated();
+            // Données validées
+            $validated = $request->validated();
+
+            Log::info('Request document Store', $validated);
+
+            // Récupération du fichier
             $file = $request->file('document_file');
-            $filename = Str::slug($request->name) . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $filename = Str::slug($validated['name']) . '_' . time() . '.' . $file->getClientOriginalExtension();
             $filePath = $file->storeAs('visa_documents', $filename, 'public');
 
+            // Création du document
             $document = Document::create([
-                'visa_request_id' => $request->visa_request_id,
-                'name' => $request->name,
+                'visa_request_id' => $validated['visa_request_id'],
+                'name' => $validated['name'],
                 'file_path' => $filePath,
-                'is_validated' => $request->is_validated ?? false,
+                'is_validated' => $validated['is_validated'] ?? false,
             ]);
 
-            return response()->json(['message' => 'Document créé avec succès', 'data' => new DocumentResource($document)], 201);
+            return response()->json([
+                'message' => 'Document créé avec succès',
+                'data' => new DocumentResource($document)
+            ], 201);
         } catch (Exception $e) {
             Log::error('Erreur lors de la création du document : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la création du document'], 500);
@@ -68,28 +77,35 @@ class DocumentController extends Controller
     }
 
     // Mettre à jour un document
-    public function update(DocumentUpdateRequest $documentUpdate, $id)
+    public function update(DocumentUpdateRequest $request, $id)
     {
         try {
             $document = Document::findOrFail($id);
-            $request = $documentUpdate->validated();
 
+            // Données validées
+            $validated = $request->validated();
+
+            // Gestion du fichier
             if ($request->hasFile('document_file')) {
+                // Supprimer l'ancien fichier si présent
                 if ($document->file_path && Storage::disk('public')->exists($document->file_path)) {
                     Storage::disk('public')->delete($document->file_path);
+                    Log::info('Ancien fichier supprimé : ' . $document->file_path);
                 }
+
                 $file = $request->file('document_file');
-                $filename = Str::slug($request->name) . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $filename = Str::slug($validated['name']) . '_' . time() . '.' . $file->getClientOriginalExtension();
                 $filePath = $file->storeAs('visa_documents', $filename, 'public');
             } else {
                 $filePath = $document->file_path;
             }
 
+            // Mise à jour du document
             $document->update([
-                'visa_request_id' => $request->visa_request_id,
-                'name' => $request->name,
+                'visa_request_id' => $validated['visa_request_id'],
+                'name' => $validated['name'],
                 'file_path' => $filePath,
-                'is_validated' => $request->is_validated ?? $document->is_validated,
+                'is_validated' => $validated['is_validated'] ?? $document->is_validated,
             ]);
 
             return new DocumentResource($document);
@@ -105,8 +121,8 @@ class DocumentController extends Controller
         try {
             $document = Document::findOrFail($id);
 
-            if ($document->file_path && Storage::disk('public')->exists($document->file_path)) {
-                Storage::disk('public')->delete($document->file_path);
+            if ($document['file_path'] && Storage::disk('public')->exists($document['file_path'])) {
+                Storage::disk('public')->delete($document['file_path']);
             }
 
             $document->delete();
@@ -157,8 +173,6 @@ class DocumentController extends Controller
 
             $document->update($validated);
             return new DocumentResource($document);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json(['message' => $e->validator->errors()->all()], 422);
         } catch (Exception $e) {
             Log::error('Erreur lors de la mise à jour du statut : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la mise à jour du document'], 500);

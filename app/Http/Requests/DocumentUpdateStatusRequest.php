@@ -36,8 +36,8 @@ class DocumentUpdateStatusRequest extends FormRequest
     public function messages()
     {
         return [
-            'is_validated.required' => 'Le champ \"is_validated\" est obligatoire.',
-            'is_validated.boolean' => 'Le champ \"is_validated\" doit être vrai ou faux.',
+            'is_validated.required' => 'Le champ is_validated est obligatoire.',
+            'is_validated.boolean' => 'Le champ is_validated doit être vrai ou faux.',
         ];
     }
 }

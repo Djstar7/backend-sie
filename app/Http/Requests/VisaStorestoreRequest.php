@@ -26,7 +26,7 @@ class VisaStorestoreRequest extends FormRequest
         return [
             'country_dest_name' => 'required|string',
             'visa_type_name' => 'required|string',
-            'user_id' => 'required|integer|exists:users,id'
+            'user_id' => 'required|string|exists:users,id'
         ];
     }
 
@@ -37,7 +37,7 @@ class VisaStorestoreRequest extends FormRequest
             'country_dest_name.required' => 'Le nom du pays de destination est requis.',
             'visa_type_name.required' => 'Le nom du type de visa est requis.',
             'user_id.required' => 'L\'identifiant de l\'utilisateur est requis.',
-            'user_id.integer' => 'L\'identifiant de l\'utilisateur doit être un entier.',
+            'user_id.string' => 'L\'identifiant de l\'utilisateur doit être une chaine de caractere.',
             'user_id.exists' => 'L\'utilisateur spécifié n\'existe pas.',
         ];
     }

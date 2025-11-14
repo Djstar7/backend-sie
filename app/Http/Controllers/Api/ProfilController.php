@@ -5,11 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfilRequest;
 use App\Http\Resources\ProfilResource;
-use App\Models\Profil;
 use App\Models\Country;
-use App\Models\User;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Models\Profil;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class ProfilController extends Controller
 {
@@ -20,7 +19,7 @@ class ProfilController extends Controller
     {
         try {
             $profils = Profil::with('country', 'user')->get();
-            return ProfilResource::collection($profils);
+            return response()->json(ProfilResource::collection($profils));
         } catch (\Exception $e) {
             Log::error('Erreur index ProfilController: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la récupération des profils'], 500);
@@ -55,9 +54,8 @@ class ProfilController extends Controller
     {
         try {
             $profil = Profil::with('country', 'user')->findOrFail($id);
-            return response()->json(new ProfilResource($profil));
+            return response()->json($profil);
         } catch (\Exception $e) {
-            Log::error('Erreur show ProfilController: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la récupération du profil'], 500);
         }
     }
@@ -67,9 +65,9 @@ class ProfilController extends Controller
     public function showUser(string $id)
     {
         try {
-            $user = User::with('profil')->findOrFail($id);
-            $profil = $user->profil;
-            return response()->json(new ProfilResource($profil));
+            $profil = Profil::where('user_id', $id)->with('country', 'user')->first();
+
+            return response()->json(['data' => new ProfilResource($profil)]);
         } catch (ModelNotFoundException $e) {
             Log::error('Utilisateur non trouvé dans showUserController: ' . $e->getMessage());
             return response()->json(['message' => 'Utilisateur non trouvé'], 404);
@@ -96,7 +94,7 @@ class ProfilController extends Controller
 
             $profil->update($data);
 
-            return new ProfilResource($profil);
+            return response()->json(['message' => 'Profil mis à jour avec succès']);
         } catch (\Exception $e) {
             Log::error('Erreur update ProfilController: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la mise à jour du profil'], 500);
@@ -106,10 +104,10 @@ class ProfilController extends Controller
     /**
      * Supprime un profil
      */
-    public function destroy(Profil $profil)
+    public function destroy(string $id)
     {
         try {
-            $profil->tokens()->delete(); // Supprime les tokens si API Sanctum
+            $profil = Profil::findOrFail($id);
             $profil->delete();
 
             return response()->json(['message' => 'Profil supprimé avec succès']);

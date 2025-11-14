@@ -43,7 +43,6 @@ class VisaRequestStoreRequest extends FormRequest
             'user_id.required' => 'L\'utilisateur est requis.',
             'user_id.exists' => 'L\'utilisateur doit exister.',
             'visa_type_name.required' => 'Le type de visa est requis.',
-            'visa_type_name.exists' => 'Le type de visa doit exister.',
             'nationality.required' => 'Le pays d\'origine est requis.',
             'nationality.exists' => 'Le pays d\'origine doit exister.',
             'country_dest_name.required' => 'Le pays de destination est requis.',

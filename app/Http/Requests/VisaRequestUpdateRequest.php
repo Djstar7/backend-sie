@@ -24,7 +24,7 @@ class VisaRequestUpdateRequest extends FormRequest
     public function rules()
     {
         return [
-            'status' => 'sometimes|string|in:pending,approved,rejected'
+            'status' => 'sometimes|string|in:pending,approved, processing, rejected'
         ];
     }
 
@@ -38,7 +38,7 @@ class VisaRequestUpdateRequest extends FormRequest
         return [
             'status.required' => 'Le statut de la demande est requis.',
             'status.string' => 'Le statut doit être une chaîne de caractères.',
-            'status.in' => 'Le statut de la demande doit être l\'un des suivants : pending, approved, rejected.'
+            'status.in' => 'Le statut de la demande doit être l\'un des suivants : pending, approved, procesing, rejected.'
         ];
     }
 }

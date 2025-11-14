@@ -11,6 +11,18 @@ class Profil extends Model
     use HasFactory;
     protected $table = 'profils';
 
+    protected $fillable = [
+        'user_id',
+        'first_name',
+        'last_name',
+        'phone',
+        'status_mat',
+        'gender',
+        'date_of_birth',
+        'place_of_birth',
+        'country_id',
+    ];
+
     public $incrementing = false; // pas d'auto-incrément
     protected $keyType = 'string'; // l'id est un string
 

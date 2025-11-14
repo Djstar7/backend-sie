@@ -40,7 +40,7 @@ class DocumentStoreRequest extends FormRequest
     {
         return [
             'visa_request_id.required' => 'La demande de visa est obligatoire.',
-            'visa_request_id.exists' => 'Cette demande de visa n’existe pas.',
+            'visa_request_id.exists' => 'La demande de visa n\'existe pas.',
             'name.required' => 'Le nom du document est obligatoire.',
             'name.string' => 'Le nom doit être une chaîne de caractères.',
             'name.max' => 'Le nom ne doit pas dépasser 255 caractères.',
@@ -48,7 +48,7 @@ class DocumentStoreRequest extends FormRequest
             'document_file.file' => 'Le fichier doit être valide.',
             'document_file.mimes' => 'Le fichier doit être au format PDF, JPG, JPEG ou PNG.',
             'document_file.max' => 'Le fichier ne doit pas dépasser 5 Mo.',
-            'is_validated.boolean' => 'Le champ \"is_validated\" doit être vrai ou faux.',
+            'is_validated.boolean' => 'Le champ is_validated doit être vrai ou faux.',
         ];
     }
 }

@@ -303,10 +303,10 @@ namespace App\Models{
  * @property string|null $date_of_birth
  * @property string|null $place_of_birth
  * @property string|null $status_mat
- * @property string|null $country_id
+ * @property string $country_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Country|null $country
+ * @property-read \App\Models\Country $country
  * @property-read \App\Models\User $user
  * @method static \Database\Factories\ProfilFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Profil newModelQuery()
