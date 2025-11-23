@@ -10,6 +10,8 @@ class PaymentResource extends JsonResource
     {
         return [
             'id'             => $this->id,
+            'userName'   => $this->visaRequest->user->name,
+            'userEmail'  => $this->visaRequest->user->email,
             'visa_request_id' => $this->visa_request_id,
             'amount'         => $this->amount,
             'transaction_id' => $this->transaction_id,

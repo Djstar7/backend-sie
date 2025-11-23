@@ -10,6 +10,7 @@ use App\Http\Resources\VisaRequestResource;
 use App\Models\Country;
 use App\Models\VisaRequest;
 use App\Models\VisaType;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class VisaRequestController extends Controller
@@ -42,7 +43,9 @@ class VisaRequestController extends Controller
                 'visa_type_id' => $visaType->id,
                 'origin_country_id' => $nationality->id,
                 'destination_country_id' => $countryDest->id,
+                'status'  => 'created'
             ]);
+            Log::info("creer avec success");
 
             return response()->json([
                 'data' => new VisaRequestResource($visaRequest),
@@ -76,6 +79,14 @@ class VisaRequestController extends Controller
                 ->where('user_id', $userId)
                 ->orderByDesc('updated_at')
                 ->get();
+
+            if (Auth::user()->hasRole('agent')) {
+                $visaRequests = VisaRequest::with(['user', 'originCountry', 'destinationCountry', 'visaType'])
+                    ->where('user_id', $userId)
+                    ->whereNotIn('status', ['pending', 'created'])
+                    ->orderByDesc('updated_at')
+                    ->get();
+            }
             return response()->json([
                 'data' => VisaRequestResource::collection($visaRequests),
                 'message' => 'Visa requests de l\'utilisateur récupérées avec succès'
@@ -91,7 +102,6 @@ class VisaRequestController extends Controller
     {
         try {
             $request = $visaRequestUpdateRequest->validated();
-            Log::info('Request VisaRequest Update', $request);
             $visaRequest = VisaRequest::findOrFail($id);
             $visaRequest->update(['status' => $request['status'] ?? $request->status]);
 

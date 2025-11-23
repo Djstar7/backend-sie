@@ -8,6 +8,7 @@ use App\Http\Requests\DocumentUpdateRequest;
 use App\Http\Requests\DocumentUpdateStatusRequest;
 use App\Http\Resources\DocumentResource;
 use App\Models\Document;
+use App\Models\VisaRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
@@ -54,6 +55,8 @@ class DocumentController extends Controller
                 'is_validated' => $validated['is_validated'] ?? false,
             ]);
 
+            $visarequest = VisaRequest::find($validated['visa_request_id']);
+            $visarequest->update(['status' => 'pending']);
             return response()->json([
                 'message' => 'Document créé avec succès',
                 'data' => new DocumentResource($document)
@@ -107,6 +110,10 @@ class DocumentController extends Controller
                 'file_path' => $filePath,
                 'is_validated' => $validated['is_validated'] ?? $document->is_validated,
             ]);
+
+            $visarequest = VisaRequest::find($validated['visa_request_id']);
+
+            $visarequest->update(['status' => 'pending']);
 
             return new DocumentResource($document);
         } catch (Exception $e) {

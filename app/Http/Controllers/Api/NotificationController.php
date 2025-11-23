@@ -15,11 +15,12 @@ class NotificationController extends Controller
     public function index()
     {
         try {
-            $notifications = Notification::with(['user', 'appoitment'])->get();
+            $notifications = Notification::with('user')->get();
             if ($notifications->isEmpty()) {
                 return response()->json(['message' => 'Aucune notification trouvée'], 404);
             }
-            return NotificationResource::collection($notifications);
+            Log::info('Data notification ', ['data' => $notifications]);
+            return response()->json(['data' => NotificationResource::collection($notifications)]);
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération des notifications : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la récupération des notifications'], 500);
@@ -42,14 +43,22 @@ class NotificationController extends Controller
     public function show($id)
     {
         try {
-            $notification = Notification::with(['user', 'appoitment'])->findOrFail($id);
-            return response()->json(new NotificationResource($notification));
+            $notification = Notification::with(['user'])->findOrFail($id);
+            return response()->json(['data' => new NotificationResource($notification)]);
         } catch (Exception $e) {
             Log::error('Notification non trouvée : ' . $e->getMessage());
             return response()->json(['message' => 'Notification non trouvée'], 404);
         }
     }
-
+    public function showUser($id)
+    {
+        try {
+            $notification = Notification::with(['user'])->where('user_id', $id)->get();
+            return response()->json(['data' => NotificationResource::collection($notification)]);
+        } catch (Exception $e) {
+            Log::error('Notification non trouvée : ' . $e->getMessage());
+        }
+    }
     // Mettre à jour une notification
     public function update(NotificationRequest $request, $id)
     {

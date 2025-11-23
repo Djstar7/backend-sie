@@ -24,12 +24,12 @@ class PaymentRequest extends FormRequest
         $paymentId = $this->route('id'); // récupère l'id si update
 
         $rules = [
-            'visa_request_id' => $paymentId ? 'sometimes|integer|exists:visa_requests,id' : 'required|integer|exists:visa_requests,id',
+            'visa_request_id' => $paymentId ? 'sometimes|exists:visa_requests,id' : 'required|exists:visa_requests,id',
             'amount'         => $paymentId ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
-            'transaction_id' => $paymentId ? "sometimes|string|unique:payments,transaction_id,{$paymentId}" : 'required|string|unique:payments,transaction_id',
+            'transaction_id' => $paymentId ? "sometimes|string|unique:payments,transaction_id,{$paymentId}" : 'nullable|string|unique:payments,transaction_id',
             'method'         => $paymentId ? 'nullable|string|max:50' : 'required|string|max:50',
             'currency'       => $paymentId ? 'nullable|string|size:3' : 'required|string|size:3',
-            'status'         => $paymentId ? 'nullable|string|in:pending,success,failed' : 'required|string|in:pending,success,failed',
+            'status'         => $paymentId ? 'nullable|string|in:pending,success,failed' : 'nullable|string|in:pending,success,failed',
             'meta'           => 'nullable|json',
         ];
 

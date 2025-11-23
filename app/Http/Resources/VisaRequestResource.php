@@ -21,6 +21,7 @@ class VisaRequestResource extends JsonResource
                 'phone' => $this->user->profil->phone ?? null,
                 'date_of_birth' => $this->user->profil?->date_of_birth ?? null,
                 'place_of_birth' => $this->user->profil?->place_of_birth ?? null,
+                'status_mat' => $this->user->profil?->status_mat ?? null,
             ],
             'visa_type_name' => $this->visaType->name ?? null,
             'visa_type_id' => $this->visaType->id ?? null,

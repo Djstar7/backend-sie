@@ -23,7 +23,7 @@ class CountryController extends Controller
             }
 
             // Retour via Resource, pas de message de succès
-            return CountryResource::collection($countries);
+            return CountryResource::collection(['data' => $countries]);
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération des pays : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la récupération des pays'], 500);

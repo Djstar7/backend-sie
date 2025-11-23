@@ -44,16 +44,28 @@ class UserController extends Controller
     public function getCustom()
     {
         try {
-            $customs = User::whereHas('roles', function ($query) {
-                $query->where('name', 'custom');
-            })->get();
+            $customs = User::with(['roles', 'visaRequests'])
+                ->whereHas('roles', function ($query) {
+                    $query->where('name',  'custom');
+                })
+                ->whereHas('visaRequests', function ($q) {
+                    $q->whereNotIn('status', ['pending', 'created']);
+                })
+                ->get();
 
-            return response()->json(['data' => $customs]);
-        } catch (\Exception $e) {
-            Log::error('Erreur show UserController: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur serveur'], 500);
+            return response()->json([
+                'success' => true,
+                'data' => $customs
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Erreur getCustom UserController: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur serveur'
+            ], 500);
         }
     }
+
 
     /**
      * Liste des utilisateurs ayant un rôle Spatie
@@ -88,13 +100,12 @@ class UserController extends Controller
 
             $user = User::create($validated);
             $user->assignRole('custom');
-
-            Auth::login($user);
-            // $request->session()->regenerate();
+            $token = $user->createToken('API Token')->plainTextToken;
 
             return response()->json([
                 'message' => 'Utilisateur créé et connecté avec succès',
-                'user' => new UserResource($user)
+                'user' => new UserResource($user),
+                'access_token' => $token
             ], 201);
         } catch (\Exception $e) {
             Log::error('Erreur register UserController: ' . $e->getMessage());
@@ -109,16 +120,17 @@ class UserController extends Controller
     {
         try {
             $credentials = $request->validated();
-
-            if (!Auth::attempt($credentials, true)) {
+            if (!Auth::attempt($credentials)) {
                 return response()->json(['message' => 'Identifiants invalides'], 401);
             }
+            $user = Auth::user();
 
-            // $request->session()->regenerate();
+            $token = $user->createToken('API Token')->plainTextToken;
 
             return response()->json([
                 'message' => 'Connexion réussie',
-                'user' => new UserResource(Auth::user())
+                'user' => new UserResource($user),
+                'access_token' => $token
             ]);
         } catch (\Exception $e) {
             Log::error('Erreur login UserController: ' . $e->getMessage());
@@ -159,7 +171,7 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, $id)
     {
         try {
-            $user = User::findOrFail($id);
+            $user = User::find($id);
             $validated = $request->validated();
 
             if (!empty($validated['password'])) {
@@ -177,7 +189,7 @@ class UserController extends Controller
                 'data' => new UserResource($user)
             ]);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Utilisateur non trouvé'], 404);
+            return response()->json(['message' => 'Utilisateur non trouvé ckckc'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur update UserController: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la mise à jour utilisateur'], 500);
@@ -187,40 +199,14 @@ class UserController extends Controller
     /**
      * Déconnexion (Session)
      */
-    public function logout(Request $request)
+    public function logout()
     {
-        try {
-            // Déconnecte l'utilisateur actuel
-            Auth::logout();
-
-            // Invalide la session actuelle
-            $request->session()->invalidate();
-
-            // Regénère le token CSRF pour éviter les attaques
-            $request->session()->regenerateToken();
-
-            return response()->json(['message' => 'Déconnexion réussie'], 200);
-        } catch (\Exception $e) {
-            Log::error('Erreur logout UserController: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur serveur lors de la déconnexion'], 500);
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Utilisateur non trouve'], 404);
         }
-    }
-
-
-    /**
-     * Rafraîchir la session
-     */
-    public function refresh(Request $request)
-    {
-        if (Auth::check()) {
-            $request->session()->regenerate();
-            return response()->json([
-                'message' => 'Session régénérée',
-                'user' => new UserResource(Auth::user())
-            ]);
-        }
-
-        return response()->json(['message' => 'Non authentifié'], 401);
+        $user->tokens()->delete();
+        return response()->json(['message' => 'Utilisateur deconnecter avec success'], 200);
     }
 
     /**

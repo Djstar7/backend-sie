@@ -7,6 +7,7 @@ use App\Http\Requests\ProfilRequest;
 use App\Http\Resources\ProfilResource;
 use App\Models\Country;
 use App\Models\Profil;
+use App\Models\VisaRequest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -93,6 +94,7 @@ class ProfilController extends Controller
             }
 
             $profil->update($data);
+            VisaRequest::where('user_id', $profil->user_id)->where('status', 'created')->delete();
 
             return response()->json(['message' => 'Profil mis à jour avec succès']);
         } catch (\Exception $e) {

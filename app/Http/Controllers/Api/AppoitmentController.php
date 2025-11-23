@@ -19,14 +19,14 @@ class AppoitmentController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $appointments = Appoitment::with('visaRequest')->get();
+            $appointments = Appoitment::with('visaRequest')->orderByDesc('updated_at')->get();
 
             if ($appointments->isEmpty()) {
                 return response()->json(['message' => 'Aucun rendez-vous trouvé.'], 404);
             }
 
             // Données seules, pas de message de succès
-            return response()->json(AppoitmentResource::collection($appointments));
+            return response()->json(['data' => AppoitmentResource::collection($appointments)]);
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération des rendez-vous : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la récupération des rendez-vous'], 500);
@@ -54,7 +54,6 @@ class AppoitmentController extends Controller
     {
         try {
             $appointment = Appoitment::with('visaRequest')->find($id);
-
             if (!$appointment) {
                 return response()->json(['message' => 'Rendez-vous non trouvé'], 404);
             }
@@ -72,16 +71,22 @@ class AppoitmentController extends Controller
     public function showByVisaRequest(string $id): JsonResponse
     {
         try {
-            $appointments = Appoitment::where('visa_request_id', $id)
+            $appoitments = Appoitment::where('visa_request_id', $id)
                 ->with('visaRequest')
                 ->get();
-
-            if ($appointments->isEmpty()) {
-                return response()->json(['message' => 'Aucun rendez-vous associé trouvé'], 404);
-            }
-
-            // Données seules
-            return response()->json(AppoitmentResource::collection($appointments));
+            return response()->json(['data' => AppoitmentResource::collection($appoitments)]);
+        } catch (Exception $e) {
+            Log::error('Erreur lors de la récupération des rendez-vous associés : ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la récupération des rendez-vous associés'], 500);
+        }
+    }
+    public function showByUser(string $id): JsonResponse
+    {
+        try {
+            $appoitments = Appoitment::whereHas('visaRequest', function ($query) use ($id) {
+                $query->where('user_id',  $id);
+            })->get();
+            return response()->json(['data' => AppoitmentResource::collection($appoitments)]);
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération des rendez-vous associés : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la récupération des rendez-vous associés'], 500);

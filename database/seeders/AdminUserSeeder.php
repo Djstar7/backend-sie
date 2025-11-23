@@ -26,7 +26,6 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'admin',
-                'phone' => '237000000000',
                 'password' => bcrypt('Staeldjune7@'),
                 'email_verified_at' => now(),
                 'remember_token' => Str::random(10),

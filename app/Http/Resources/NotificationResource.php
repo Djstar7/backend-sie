@@ -21,11 +21,6 @@ class NotificationResource extends JsonResource
                 'name'  => $this->user->name,
                 'email' => $this->user->email,
             ],
-            'appoitment' => $this->appoitment ? [
-                'id'        => $this->appoitment->id,
-                'status'     => $this->appoitment->status,
-                'scheduled_at'      => $this->appoitment->scheduled_at->format('Y-m-d H:i'),
-            ] : null,
             'type'       => $this->type,
             'content'    => $this->content,
             'status'     => $this->status,

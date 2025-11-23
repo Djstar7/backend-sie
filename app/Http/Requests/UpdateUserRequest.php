@@ -27,7 +27,7 @@ class UpdateUserRequest extends FormRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'password' => 'nullable|string|min:6',
-            'role' => 'required|in:agent,admin',
+            'role' => 'required|in:agent,admin,custom',
         ];
     }
 
@@ -42,7 +42,7 @@ class UpdateUserRequest extends FormRequest
             'name.required' => 'Le nom est requis.',
             'email.required' => 'L\'email est requis.',
             'role.required' => 'Le role est requis',
-            'role.in' => 'Le role doit etre soit agent ou admin',
+            'role.in' => 'Le role doit etre soit agent, client ou admin',
         ];
     }
 }

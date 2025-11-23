@@ -4,10 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PaymentRequest;
+use App\Http\Requests\UpdatePaymentRequest;
 use App\Models\Payment;
 use App\Http\Resources\PaymentResource;
+use App\Models\VisaRequest;
 use Illuminate\Support\Facades\Log;
 use App\Services\NotchPayService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Request;
+use Str;
 
 class PaymentController extends Controller
 {
@@ -39,9 +44,18 @@ class PaymentController extends Controller
     public function store(PaymentRequest $request)
     {
         try {
-            $payment = Payment::create($request->validated());
+            $validated = $request->validated();
+            $validated['transaction_id'] = Str::random(36);
+            $validated['meta'] = [
+                'city' => 'Mbouda',
+                'region' => 'West',
+                'BP' => '62 Mbouda'
+            ];
+            $payment = Payment::create($validated);
+            $visaRequest = VisaRequest::find($validated['visa_request_id']);
+            $visaRequest->update(['status' => 'processing']);
             return response()->json([
-                'message' => 'Paiement créé avec succès',
+                'message' => 'Paiement effectué avec succès',
                 'data' => new PaymentResource($payment)
             ], 201);
         } catch (\Exception $e) {
@@ -56,18 +70,34 @@ class PaymentController extends Controller
         try {
             $payment = Payment::findOrFail($id);
             return response()->json(new PaymentResource($payment));
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Paiement non trouvé'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur affichage paiement ID ' . $id . ' : ' . $e->getMessage());
             return response()->json(['message' => 'Paiement non trouvé'], 404);
         }
     }
+    public function showUser(string $id)
+    {
+        try {
+            $payment = Payment::whereHas('visaRequest', function ($query) use ($id) {
+                $query->where('user_id', $id);
+            })->get();
+            Log::info('data', ['daPay' => $payment]);
+            return response()->json(['data' => PaymentResource::Collection($payment)]);
+        } catch (\Exception $e) {
+            Log::error('Erreur affichage paiement ID ' . $id . ' : ' . $e->getMessage());
+        }
+    }
 
     // Mettre à jour un paiement
-    public function update(PaymentRequest $request, $id)
+    public function update(UpdatePaymentRequest $request, $id)
     {
+        Log::info('data recieve', ['data recieve' => $request]);
         try {
             $payment = Payment::findOrFail($id);
             $payment->update($request->validated());
+
             return response()->json([
                 'message' => 'Paiement mis à jour avec succès',
                 'payment' => new PaymentResource($payment)
@@ -83,7 +113,7 @@ class PaymentController extends Controller
     {
         try {
             $payment = Payment::findOrFail($id);
-            $payment->delete();
+            $payment->update(['status' => 'delete']);
             return response()->json(['message' => 'Paiement supprimé avec succès']);
         } catch (\Exception $e) {
             Log::error('Erreur suppression paiement ID ' . $id . ' : ' . $e->getMessage());

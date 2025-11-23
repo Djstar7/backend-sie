@@ -34,7 +34,7 @@ class Appoitment extends Model
     }
     public function visaRequest()
     {
-        return $this->belongsTo(VisaRequest::class, 'visarequest_id', 'id');
+        return $this->belongsTo(VisaRequest::class, 'visa_request_id', 'id');
     }
 
     public function notifications()

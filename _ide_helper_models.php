@@ -21,7 +21,7 @@ namespace App\Models{
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notification> $notifications
  * @property-read int|null $notifications_count
- * @property-read \App\Models\VisaRequest|null $visaRequest
+ * @property-read \App\Models\VisaRequest $visaRequest
  * @method static \Database\Factories\AppoitmentFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Appoitment newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Appoitment newQuery()
@@ -297,12 +297,13 @@ namespace App\Models{
 /**
  * @property string $id
  * @property string $user_id
- * @property string|null $first_name
- * @property string|null $last_name
- * @property string|null $gender
- * @property string|null $date_of_birth
- * @property string|null $place_of_birth
- * @property string|null $status_mat
+ * @property string $first_name
+ * @property string $last_name
+ * @property string $phone
+ * @property string $gender
+ * @property string $date_of_birth
+ * @property string $place_of_birth
+ * @property string $status_mat
  * @property string $country_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -319,6 +320,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Profil whereGender($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Profil whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Profil whereLastName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Profil wherePhone($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Profil wherePlaceOfBirth($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Profil whereStatusMat($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Profil whereUpdatedAt($value)
