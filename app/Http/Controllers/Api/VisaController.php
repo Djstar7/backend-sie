@@ -114,7 +114,7 @@ class VisaController extends Controller
         } catch (\Exception $e) {
             Log::error('Erreur récupération documents requis: ' . $e->getMessage());
             return response()->json([
-                'message' => 'Erreur serveur: ' . $e->getMessage(),
+                'message' => 'récupération documents requis'
             ], 500);
         }
     }

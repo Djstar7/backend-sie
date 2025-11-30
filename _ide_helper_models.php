@@ -19,8 +19,6 @@ namespace App\Models{
  * @property string $status
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notification> $notifications
- * @property-read int|null $notifications_count
  * @property-read \App\Models\VisaRequest $visaRequest
  * @method static \Database\Factories\AppoitmentFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Appoitment newModelQuery()
@@ -233,33 +231,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Message whereVisaRequestId($value)
  */
 	class Message extends \Eloquent {}
-}
-
-namespace App\Models{
-/**
- * @property string $id
- * @property string $type
- * @property string $notifiable_type
- * @property int $notifiable_id
- * @property string $data
- * @property string|null $read_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\User|null $user
- * @method static \Database\Factories\NotificationFactory factory($count = null, $state = [])
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereData($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereNotifiableId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereNotifiableType($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereReadAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereType($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereUpdatedAt($value)
- */
-	class Notification extends \Eloquent {}
 }
 
 namespace App\Models{

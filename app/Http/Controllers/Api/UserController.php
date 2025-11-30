@@ -53,10 +53,12 @@ class UserController extends Controller
                     $q->whereNotIn('status', ['pending', 'created']);
                 })
                 ->get();
-
+            // foreach ($customs as $custom) {
+            //     $custom['numberVisaRequestPending'] = $custom->visaRequests()->where('status', 'pending')->count();
+            //     $custom['numberMessageUnRead'] = $custom->messages()->whereNull('read_at')->count();
+            // }
             return response()->json([
-                'success' => true,
-                'data' => $customs
+                'data' => $customs,
             ]);
         } catch (\Throwable $e) {
             Log::error('Erreur getCustom UserController: ' . $e->getMessage());

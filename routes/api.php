@@ -41,6 +41,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/document', [DocumentController::class, 'index']);
     Route::get('/document/show/{id}', [DocumentController::class, 'show']);
 
+    Route::get('/notification/numunread', [NotificationController::class, 'unread']);
+    Route::put('/notification/read/{id}', [NotificationController::class, 'markAsRead']);
+    Route::put('/notification/unread/{id}', [NotificationController::class, 'markUnRead']);
+    Route::put('/notification/read', [NotificationController::class, 'markAllRead']);
+
 
     Route::get('/user/show/{id}', [UserController::class, 'show']);
 
@@ -80,6 +85,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
     // Routes pour agents
+
     Route::middleware(['role:agent'])->group(function () {
         Route::get('/visa-requests', [VisaController::class, 'index']);
 
@@ -90,7 +96,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
         Route::prefix('notification')->group(function () {
-            Route::get('/', [NotificationController::class, 'index']);
             Route::post('/store', [NotificationController::class, 'store']);
             Route::put('/update/{id}', [NotificationController::class, 'update']);
             Route::delete('/delete/{id}', [NotificationController::class, 'destroy']);
@@ -176,9 +181,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
 
+    Route::get('/appoitment/showbyvisarequest/{id}', [AppoitmentController::class, 'showByVisaRequest']);
     Route::middleware(['role:agent|custom'])->group(function () {
         Route::get('/appoitment', [AppoitmentController::class, 'index']);
-        Route::get('/appoitment/showbyvisarequest/{id}', [AppoitmentController::class, 'showByVisaRequest']);
         Route::get('/appoitment/show/{id}', [AppoitmentController::class, 'show']);
         Route::put('/appoitment/update/{id}', [AppoitmentController::class, 'update']);
         Route::put('/appoitment/updatebyuser/{id}', [AppoitmentController::class, 'updateByUser']);

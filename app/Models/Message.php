@@ -29,6 +29,14 @@ class Message extends Model
             }
         });
     }
+
+    public function markAsRead(): void
+    {
+        if ($this->status !== 'read') {
+            $this->update(['status' => 'read']);
+        }
+    }
+
     function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');

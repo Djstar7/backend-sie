@@ -19,9 +19,11 @@ class MessageController extends Controller
     {
         try {
             $messages = Message::with(['user', 'visaRequest'])->get();
+
             if ($messages->isEmpty()) {
                 return response()->json(['message' => 'Aucun message trouvé'], 404);
             }
+
             return MessageResource::collection($messages);
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération des messages : ' . $e->getMessage());
@@ -29,37 +31,51 @@ class MessageController extends Controller
         }
     }
 
-    // Créer un message
+    // Créer un message (client → agents ou agent → client)
     public function store(MessageRequest $request)
     {
         try {
             $validated = $request->validated();
             $message = Message::create($validated);
+
+            // Notification si AGENT écrit → notifier le CLIENT
             if (Auth::user()->hasRole('agent')) {
-                UserActionEvent::dispatch(User::find($validated['user_id']), [
-                    "type" => "Message",
-                    "message" => "Nouveaux messages recus"
-                ]);
-            } else {
-                $agents = User::whereHas('roles', function ($query) {
-                    $query->where('name', 'agent');
-                })->get();
-                foreach ($agents as $agent) {
-                    Log::info('agent', ['agent' => $agents]);
-                    UserActionEvent::dispatch($agent, [
+
+                UserActionEvent::dispatch(
+                    User::find($validated['user_id']),
+                    [
                         "type" => "Message",
-                        "message" => "Nouveaux messages recus"
-                    ]);
+                        "message" => "Nouveaux messages reçus"
+                    ]
+                );
+            } else {
+                // Notification si CLIENT écrit → notifier TOUS LES AGENTS
+                $agents = User::whereHas('roles', function ($q) {
+                    $q->where('name', 'agent');
+                })->get();
+
+                foreach ($agents as $agent) {
+                    UserActionEvent::dispatch(
+                        $agent,
+                        [
+                            "type" => "Message",
+                            "message" => "Nouveaux messages reçus",
+                        ]
+                    );
                 }
             }
-            return response()->json(['message' => 'Message créé avec succès', 'data' => new MessageResource($message)], 201);
+
+            return response()->json([
+                'message' => 'Message créé avec succès',
+                'data' => new MessageResource($message)
+            ], 201);
         } catch (Exception $e) {
             Log::error('Erreur lors de la création du message : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la création du message'], 500);
         }
     }
 
-    // Afficher un message spécifique
+    // Affiche un message
     public function show($id)
     {
         try {
@@ -71,7 +87,7 @@ class MessageController extends Controller
         }
     }
 
-    // Afficher les messages par demande de visa et filtrage agent/client
+    // Messages filtrés + marquage "read"
     public function showByVisaRequest($customId, $visaRequestId)
     {
         try {
@@ -83,10 +99,34 @@ class MessageController extends Controller
                 return response()->json(['message' => 'Aucun message trouvé'], 404);
             }
 
-            $agentMessages = $messages->filter(fn($msg) => $msg->user->roles->contains('name', 'agent'))->values();
-            $customMessages = $messages->filter(fn($msg) => $msg->visaRequest && $msg->visaRequest->user_id == $customId && $msg->user_id == $customId)->values();
+            // FILTRAGE
+            $agentMessages = $messages->filter(
+                fn($msg) =>
+                $msg->user->roles->contains('name', 'agent')
+            )->values();
+
+            $customMessages = $messages->filter(
+                fn($msg) =>
+                $msg->visaRequest &&
+                    $msg->visaRequest->user_id == $customId &&
+                    $msg->user_id == $customId
+            )->values();
+
+            if (Auth::user()->hasRole('agent')) {
+                foreach ($customMessages as $msg) {
+                    if ($msg->status !== 'read') {
+                        $msg->update(['status' => 'read']);
+                    }
+                }
+            } else {
+                foreach ($agentMessages as $msg) {
+                    if ($msg->status !== 'read') {
+                        $msg->update(['status' => 'read']);
+                    }
+                }
+            }
+
             return response()->json([
-                'message' => 'Liste des messages récupérée avec succès',
                 'agentMessages' => MessageResource::collection($agentMessages),
                 'customMessages' => MessageResource::collection($customMessages),
             ]);
@@ -96,7 +136,7 @@ class MessageController extends Controller
         }
     }
 
-    // Mettre à jour un message
+    // Mise à jour
     public function update(MessageRequest $request, $id)
     {
         try {
@@ -109,7 +149,7 @@ class MessageController extends Controller
         }
     }
 
-    // Supprimer un message
+    // Supprimer
     public function destroy($id)
     {
         try {
