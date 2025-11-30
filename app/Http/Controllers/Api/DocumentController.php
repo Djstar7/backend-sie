@@ -40,8 +40,6 @@ class DocumentController extends Controller
             // Données validées
             $validated = $request->validated();
 
-            Log::info('Request document Store', $validated);
-
             // Récupération du fichier
             $file = $request->file('document_file');
             $filename = Str::slug($validated['name']) . '_' . time() . '.' . $file->getClientOriginalExtension();
@@ -176,10 +174,21 @@ class DocumentController extends Controller
     {
         try {
             $document = Document::findOrFail($id);
-            $validated = $request->validated();
+            $visaRequestId = $document->visa_request_id;
+            $document->update($request->validated());
 
-            $document->update($validated);
-            return new DocumentResource($document);
+            $documents = Document::where('visa_request_id', $visaRequestId)->get();
+            $numberDoc = $documents->count();
+            $numberTrue = 0;
+            foreach ($documents as $doc) {
+                if ($doc['is_validated']) {
+                    $numberTrue++;
+                }
+            }
+            if ($numberTrue === $numberDoc) {
+                VisaRequest::find($visaRequestId)->update(['status' => 'approved']);
+            }
+            return response()->json(['data' => new DocumentResource($document)]);
         } catch (Exception $e) {
             Log::error('Erreur lors de la mise à jour du statut : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la mise à jour du document'], 500);

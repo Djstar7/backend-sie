@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\UserActionEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\VisaRequestFormRequest;
 use App\Http\Requests\VisaRequestStoreRequest;
@@ -45,7 +46,11 @@ class VisaRequestController extends Controller
                 'destination_country_id' => $countryDest->id,
                 'status'  => 'created'
             ]);
-            Log::info("creer avec success");
+
+            UserActionEvent::dispatch(Auth::user(), [
+                "type" => "Demande visa",
+                "message" => Auth::user()->name . 'Vous avez creer avec succes la demande d\'indices ' . $visaRequest->id
+            ]);
 
             return response()->json([
                 'data' => new VisaRequestResource($visaRequest),

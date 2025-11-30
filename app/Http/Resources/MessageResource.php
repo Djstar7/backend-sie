@@ -13,8 +13,6 @@ class MessageResource extends JsonResource
             'user' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
-                'email' => $this->user->email,
-                'role' => $this->user->role,
             ],
             'visa_request_id' => $this->visa_request_id ?? null,
             'content' => $this->content,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\UserActionEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PaymentRequest;
 use App\Http\Requests\UpdatePaymentRequest;
@@ -11,6 +12,7 @@ use App\Models\VisaRequest;
 use Illuminate\Support\Facades\Log;
 use App\Services\NotchPayService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use Str;
 
@@ -54,6 +56,10 @@ class PaymentController extends Controller
             $payment = Payment::create($validated);
             $visaRequest = VisaRequest::find($validated['visa_request_id']);
             $visaRequest->update(['status' => 'processing']);
+            UserActionEvent::dispatch(Auth::user(), [
+                "type" => "Paiement",
+                "message" => "Paiement effectuer avec succes votree demande est desormais sur en traiement aau prese de notre services agent et egalement vos avez la possibiliter de les ecrire directement concernant votre demande"
+            ]);
             return response()->json([
                 'message' => 'Paiement effectué avec succès',
                 'data' => new PaymentResource($payment)
@@ -93,7 +99,6 @@ class PaymentController extends Controller
     // Mettre à jour un paiement
     public function update(UpdatePaymentRequest $request, $id)
     {
-        Log::info('data recieve', ['data recieve' => $request]);
         try {
             $payment = Payment::findOrFail($id);
             $payment->update($request->validated());

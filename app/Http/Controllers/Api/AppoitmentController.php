@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\UserActionEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AppoitmentStoreAndUpdateRequest;
-use App\Http\Requests\AppoitmentUpdateByUserRequest;
 use App\Http\Resources\AppoitmentResource;
 use App\Models\Appoitment;
+use App\Models\User;
+use App\Models\VisaRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 
 class AppoitmentController extends Controller
 {
@@ -19,14 +22,14 @@ class AppoitmentController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $appointments = Appoitment::with('visaRequest')->orderByDesc('updated_at')->get();
+            $appoitments = Appoitment::with('visaRequest')->orderByDesc('updated_at')->get();
 
-            if ($appointments->isEmpty()) {
+            if ($appoitments->isEmpty()) {
                 return response()->json(['message' => 'Aucun rendez-vous trouvé.'], 404);
             }
 
             // Données seules, pas de message de succès
-            return response()->json(['data' => AppoitmentResource::collection($appointments)]);
+            return response()->json(['data' => AppoitmentResource::collection($appoitments)]);
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération des rendez-vous : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la récupération des rendez-vous'], 500);
@@ -53,12 +56,12 @@ class AppoitmentController extends Controller
     public function show(string $id): JsonResponse
     {
         try {
-            $appointment = Appoitment::with('visaRequest')->find($id);
-            if (!$appointment) {
+            $appoitment = Appoitment::with('visaRequest')->find($id);
+            if (!$appoitment) {
                 return response()->json(['message' => 'Rendez-vous non trouvé'], 404);
             }
 
-            return response()->json(new AppoitmentResource($appointment));
+            return response()->json(new AppoitmentResource($appoitment));
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération du rendez-vous : ' . $e->getMessage());
             return response()->json(['message' => 'Erreur lors de la récupération du rendez-vous'], 500);
@@ -86,6 +89,11 @@ class AppoitmentController extends Controller
             $appoitments = Appoitment::whereHas('visaRequest', function ($query) use ($id) {
                 $query->where('user_id',  $id);
             })->get();
+
+            UserActionEvent::dispatch(Auth::user(), [
+                "type" => "Appoitment",
+                "message" => "Veillez choisir la date qui vous convient pour venir avec vos document en physique pour terminer la procedure"
+            ]);
             return response()->json(['data' => AppoitmentResource::collection($appoitments)]);
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération des rendez-vous associés : ' . $e->getMessage());
@@ -94,39 +102,38 @@ class AppoitmentController extends Controller
     }
 
     /**
-     * Mettre à jour un rendez-vous
-     */
-    public function update(AppoitmentStoreAndUpdateRequest $request, string $id): JsonResponse
-    {
-        try {
-            $appointment = Appoitment::find($id);
-
-            if (!$appointment) {
-                return response()->json(['message' => 'Rendez-vous non trouvé'], 404);
-            }
-
-            $appointment->update($request->validated());
-
-            return response()->json(['message' => 'Rendez-vous mis à jour avec succès']);
-        } catch (Exception $e) {
-            Log::error('Erreur lors de la mise à jour de rendez-vous : ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la mise à jour du rendez-vous'], 500);
-        }
-    }
-
-    /**
      * Mise à jour par l'utilisateur (champ limité)
      */
-    public function updateByUser(AppoitmentUpdateByUserRequest $request, string $id): JsonResponse
+    public function updateByUser(AppoitmentStoreAndUpdateRequest $request, string $id): JsonResponse
     {
         try {
-            $appointment = Appoitment::find($id);
+            $appoitment = Appoitment::find($id);
 
-            if (!$appointment) {
+            if (!$appoitment) {
                 return response()->json(['message' => 'Rendez-vous non trouvé'], 404);
             }
+            $appoitments = Appoitment::where('status', 'rescheduled')->get();
 
-            $appointment->update($request->validated());
+            foreach ($appoitments as $appoit) {
+                $appoit->update(['status' => 'pending']);
+            }
+
+            $appoitment->update($request->validated());
+
+            UserActionEvent::dispatch(Auth::user(), [
+                "type" => "Appoitment",
+                "message" => "Vous avez approvez avec success la date du $appoitment->scheduled_at pour vous rendre au services agant avec les document approuves par note agents"
+            ]);
+            $agents = User::whereHas('roles', function ($q) {
+                $q->where('name', 'agent');
+            });
+            foreach ($agents as $ag) {
+                UserActionEvent::dispatch($ag, [
+                    "type" => "Appoitment",
+                    "message" => "Le client d'identifiant $appoitment->user_id a prouver de ce rendre a votre service le $appoitment->scheduled_at pour la finalisation du traitement de sa demande d'identifiant $appoitment->visa_request_id"
+                ]);
+            }
+
 
             return response()->json(['message' => 'Rendez-vous mis à jour avec succès']);
         } catch (Exception $e) {
@@ -141,13 +148,13 @@ class AppoitmentController extends Controller
     public function destroy(string $id): JsonResponse
     {
         try {
-            $appointment = Appoitment::find($id);
+            $appoitment = Appoitment::find($id);
 
-            if (!$appointment) {
+            if (!$appoitment) {
                 return response()->json(['message' => 'Rendez-vous non trouvé'], 404);
             }
 
-            $appointment->delete();
+            $appoitment->delete();
 
             return response()->json(['message' => 'Rendez-vous supprimé avec succès']);
         } catch (Exception $e) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\UserActionEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
@@ -101,7 +102,12 @@ class UserController extends Controller
             $user = User::create($validated);
             $user->assignRole('custom');
             $token = $user->createToken('API Token')->plainTextToken;
+            Auth::login($user);
 
+            UserActionEvent::dispatch(Auth::user(), [
+                "type" => "Bienvue",
+                "message" => "Bienvue dans notre plateforme $user->name"
+            ]);
             return response()->json([
                 'message' => 'Utilisateur créé et connecté avec succès',
                 'user' => new UserResource($user),
@@ -127,6 +133,10 @@ class UserController extends Controller
 
             $token = $user->createToken('API Token')->plainTextToken;
 
+            UserActionEvent::dispatch(Auth::user(), [
+                "type" => "Connexion",
+                "message" => "Nous sommes ocntent de vous revoir $user->name"
+            ]);
             return response()->json([
                 'message' => 'Connexion réussie',
                 'user' => new UserResource($user),

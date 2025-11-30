@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\UserActionEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfilRequest;
 use App\Http\Resources\ProfilResource;
@@ -10,6 +11,7 @@ use App\Models\Profil;
 use App\Models\VisaRequest;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 
 class ProfilController extends Controller
 {
@@ -40,6 +42,10 @@ class ProfilController extends Controller
             unset($data['nationality']);
 
             $profil = Profil::create($data);
+            UserActionEvent::dispatch(Auth::user(), [
+                "type" => "Profil",
+                "message" => "Votre profil a ete creer avec succes vous pouvez desormais filtrer les diferents document requis pour une demande specifique"
+            ]);
 
             return response()->json(['message' => 'Profil créé avec succès', 'data' => new ProfilResource($profil)], 201);
         } catch (\Exception $e) {
@@ -74,7 +80,7 @@ class ProfilController extends Controller
             return response()->json(['message' => 'Utilisateur non trouvé'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur showUserController: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur serveur lors de la récupération de user du profil'], 500);
+            // return response()->json(['message' => 'Erreur serveur lors de la récupération de user du profil'], 500);
         }
     }
 

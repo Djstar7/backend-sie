@@ -238,24 +238,26 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property string $id
- * @property string $user_id
  * @property string $type
- * @property string $content
- * @property string $status
+ * @property string $notifiable_type
+ * @property int $notifiable_id
+ * @property string $data
+ * @property string|null $read_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\User $user
+ * @property-read \App\Models\User|null $user
  * @method static \Database\Factories\NotificationFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereContent($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereData($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereNotifiableId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereNotifiableType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereReadAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Notification whereUserId($value)
  */
 	class Notification extends \Eloquent {}
 }
@@ -381,7 +383,6 @@ namespace App\Models{
  * @property string $id
  * @property string $name
  * @property string $email
- * @property string|null $phone
  * @property string $password
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property string|null $remember_token
@@ -391,7 +392,7 @@ namespace App\Models{
  * @property-read int|null $logs_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Message> $messages
  * @property-read int|null $messages_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Notification> $notifications
+ * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \Spatie\Permission\Models\Permission> $permissions
  * @property-read int|null $permissions_count
@@ -414,7 +415,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePassword($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePhone($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User withoutPermission($permissions)

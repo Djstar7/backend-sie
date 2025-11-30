@@ -84,10 +84,6 @@ class User extends Authenticatable
     {
         return $this->hasMany(Log::class, 'user_id', 'id');
     }
-    function notifications()
-    {
-        return $this->hasMany(Notification::class, 'user_id', 'id');
-    }
     function messages()
     {
         return $this->hasMany(Message::class, 'user_id', 'id');

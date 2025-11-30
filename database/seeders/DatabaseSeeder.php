@@ -31,7 +31,6 @@ class DatabaseSeeder extends Seeder
             ReceiptSeeder::class,
             MessageSeeder::class,
             AppoitmentSeeder::class,
-            NotificationSeeder::class,
             MessageSeeder::class,
         ]);
     }

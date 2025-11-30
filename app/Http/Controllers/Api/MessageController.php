@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\UserActionEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MessageRequest;
 use App\Models\Message;
 use App\Http\Resources\MessageResource;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 
 class MessageController extends Controller
 {
@@ -30,7 +33,25 @@ class MessageController extends Controller
     public function store(MessageRequest $request)
     {
         try {
-            $message = Message::create($request->validated());
+            $validated = $request->validated();
+            $message = Message::create($validated);
+            if (Auth::user()->hasRole('agent')) {
+                UserActionEvent::dispatch(User::find($validated['user_id']), [
+                    "type" => "Message",
+                    "message" => "Nouveaux messages recus"
+                ]);
+            } else {
+                $agents = User::whereHas('roles', function ($query) {
+                    $query->where('name', 'agent');
+                })->get();
+                foreach ($agents as $agent) {
+                    Log::info('agent', ['agent' => $agents]);
+                    UserActionEvent::dispatch($agent, [
+                        "type" => "Message",
+                        "message" => "Nouveaux messages recus"
+                    ]);
+                }
+            }
             return response()->json(['message' => 'Message créé avec succès', 'data' => new MessageResource($message)], 201);
         } catch (Exception $e) {
             Log::error('Erreur lors de la création du message : ' . $e->getMessage());
@@ -64,7 +85,6 @@ class MessageController extends Controller
 
             $agentMessages = $messages->filter(fn($msg) => $msg->user->roles->contains('name', 'agent'))->values();
             $customMessages = $messages->filter(fn($msg) => $msg->visaRequest && $msg->visaRequest->user_id == $customId && $msg->user_id == $customId)->values();
-
             return response()->json([
                 'message' => 'Liste des messages récupérée avec succès',
                 'agentMessages' => MessageResource::collection($agentMessages),
