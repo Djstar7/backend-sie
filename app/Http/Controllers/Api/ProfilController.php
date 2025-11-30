@@ -100,7 +100,6 @@ class ProfilController extends Controller
             }
 
             $profil->update($data);
-            VisaRequest::where('user_id', $profil->user_id)->where('status', 'created')->delete();
 
             return response()->json(['message' => 'Profil mis à jour avec succès']);
         } catch (\Exception $e) {

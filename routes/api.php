@@ -48,6 +48,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
     Route::get('/user/show/{id}', [UserController::class, 'show']);
+    Route::get('/user/showbyagent/{id}', [UserController::class, 'showByAgent']);
 
 
     Route::post('/visa/storestore', [VisaController::class, 'storestore']);
@@ -67,7 +68,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Routes pour custom
     Route::middleware(['role:custom'])->group(function () {
         Route::post('/visarequest/store', [VisaRequestController::class, 'store']);
-        Route::delete('/visarequest/delete/{id}', [VisaRequestController::class, 'destroy']);
 
         Route::put('/user/storeprofil', [UserController::class, 'storeProfil']);
         Route::put('/user/updateprofil/{id}', [UserController::class, 'updateProfil']);
@@ -112,6 +112,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/user/storecustombyadmin', [UserController::class, 'storeCustomByAdmin']);
 
         Route::get('/visarequest', [VisaRequestController::class, 'index']);
+        Route::delete('/visarequest/delete/{id}', [VisaRequestController::class, 'destroy']);
 
         Route::get('/visa', [VisaController::class, 'index']);
         Route::post('/visa/store', [VisaController::class, 'store']);

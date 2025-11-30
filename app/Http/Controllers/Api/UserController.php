@@ -53,10 +53,6 @@ class UserController extends Controller
                     $q->whereNotIn('status', ['pending', 'created']);
                 })
                 ->get();
-            // foreach ($customs as $custom) {
-            //     $custom['numberVisaRequestPending'] = $custom->visaRequests()->where('status', 'pending')->count();
-            //     $custom['numberMessageUnRead'] = $custom->messages()->whereNull('read_at')->count();
-            // }
             return response()->json([
                 'data' => $customs,
             ]);
@@ -274,6 +270,26 @@ class UserController extends Controller
             return response()->json([
                 'message' => 'Utilisateur récupéré avec succès',
                 'data' => new UserResource($user)
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['message' => 'Utilisateur non trouvé'], 404);
+        } catch (\Exception $e) {
+            Log::error('Erreur show UserController: ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur serveur'], 500);
+        }
+    }
+    public function showByAgent($id)
+    {
+        try {
+            $user = User::findOrFail($id);
+            $user['numberVisaRequestPending'] = $user->visaRequests()->where('status', 'pending')->count();
+            $user['numberMessageUnRead'] = $user->messages()->where('status', 'sent')->count();
+            Log::info('hsdbjksd', [$user]);
+
+            Log::info('gvfcvgj', [$user]);
+            return response()->json([
+                'message' => 'Utilisateur récupéré avec succès',
+                'data' => $user
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['message' => 'Utilisateur non trouvé'], 404);
