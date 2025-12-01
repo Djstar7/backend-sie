@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\VisaStoreRequest;
 use App\Http\Requests\VisaStorestoreRequest;
 use App\Http\Requests\VisaUpdateRequest;
+use App\Http\Resources\VisaRequestResource;
 use App\Http\Resources\VisaResource;
 use App\Models\Country;
 use App\Models\CountryVisaType;
@@ -44,7 +45,14 @@ class VisaController extends Controller
             ])->findOrFail($countryVisaTypeId);
 
             return response()->json([
-                'data' => new VisaResource($countryVisaType),
+                'data' => array_merge(
+                    (new VisaResource($countryVisaType))->toArray(request()),
+                    [
+                        'status_mat' => $countryVisaType->requiredDocuments[0]->status_mat,
+                        'min_age'    => $countryVisaType->requiredDocuments[0]->min_age,
+                        'max_age'    => $countryVisaType->requiredDocuments[0]->max_age,
+                    ]
+                ),
                 'message' => 'Détails du visa récupérés avec succès',
             ]);
         } catch (ModelNotFoundException $e) {
@@ -58,6 +66,7 @@ class VisaController extends Controller
             ], 500);
         }
     }
+
 
     public function store(VisaStoreRequest $visaStoreRequest)
     {
