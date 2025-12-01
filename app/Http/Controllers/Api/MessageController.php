@@ -142,6 +142,9 @@ class MessageController extends Controller
         try {
             $message = Message::findOrFail($id);
             $message->update($request->validated());
+            if ($message->status === 'read') {
+                $message->update(['status' => 'sent']);
+            }
             return response()->json(['message' => 'Message mis à jour avec succès'], 200);
         } catch (Exception $e) {
             Log::error('Erreur lors de la mise à jour du message : ' . $e->getMessage());
