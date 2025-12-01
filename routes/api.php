@@ -116,6 +116,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         Route::get('/visa', [VisaController::class, 'index']);
         Route::post('/visa/store', [VisaController::class, 'store']);
+        Route::get('/visa/show/{id}', [VisaController::class, 'show']);
         Route::put('/visa/update/{id}', [VisaController::class, 'update']);
         Route::delete('/visa/delete/{id}', [VisaController::class, 'destroy']);
 

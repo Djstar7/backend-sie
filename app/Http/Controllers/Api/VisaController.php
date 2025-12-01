@@ -16,12 +16,49 @@ use App\Models\VisaType;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class VisaController extends Controller
 {
-    /**
-     * Enregistrement ou mise à jour d'un type de visa pour un pays.
-     */
+    public function index()
+    {
+        try {
+            $countryVisaTypes = CountryVisaType::with(['country', 'visaType'])->paginate(15);
+
+            return VisaResource::collection($countryVisaTypes);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération de la liste des visas: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Erreur serveur lors de la récupération de la liste des visas',
+            ], 500);
+        }
+    }
+
+    public function show(string $countryVisaTypeId)
+    {
+        try {
+            $countryVisaType = CountryVisaType::with([
+                'country',
+                'visaType',
+                'requiredDocuments'
+            ])->findOrFail($countryVisaTypeId);
+
+            return response()->json([
+                'data' => new VisaResource($countryVisaType),
+                'message' => 'Détails du visa récupérés avec succès',
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Visa non trouvé.'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la récupération du détail du visa: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Erreur serveur lors de la récupération du détail du visa',
+            ], 500);
+        }
+    }
+
     public function store(VisaStoreRequest $visaStoreRequest)
     {
         try {
@@ -31,7 +68,6 @@ class VisaController extends Controller
                 $country = Country::where('name', $data['country_name'])->firstOrFail();
                 $visaType = VisaType::where('name', $data['visa_type_name'])->firstOrFail();
 
-                // Création ou mise à jour du type de visa pour le pays
                 $countryVisaType = CountryVisaType::updateOrCreate(
                     ['country_id' => $country->id, 'visa_type_id' => $visaType->id],
                     [
@@ -75,9 +111,6 @@ class VisaController extends Controller
     }
 
 
-    /**
-     * Récupération des documents requis pour un utilisateur donné selon son visa.
-     */
     public function storestore(VisaStorestoreRequest $visaStoreRequest)
     {
         try {
@@ -94,7 +127,6 @@ class VisaController extends Controller
                 ->where('visa_type_id', $visaType->id)
                 ->firstOrFail();
 
-            // Chargement des documents filtrés selon statut matrimonial et âge
             $countryVisaType->load(['requiredDocuments' => function ($q) use ($profil, $age) {
                 $q->where(function ($query) use ($profil) {
                     $query->whereNull('status_mat')
@@ -119,9 +151,6 @@ class VisaController extends Controller
         }
     }
 
-    /**
-     * Mise à jour des informations d’un visa existant.
-     */
     public function update(string $countryVisaTypeId, VisaUpdateRequest $request)
     {
         try {
@@ -138,6 +167,30 @@ class VisaController extends Controller
             Log::error('Erreur mise à jour visa: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Erreur serveur lors de la mise à jour du visa',
+            ], 500);
+        }
+    }
+
+    public function destroy(string $countryVisaTypeId)
+    {
+        try {
+            $countryVisaType = CountryVisaType::findOrFail($countryVisaTypeId);
+
+            $countryVisaType->requiredDocuments()->detach();
+
+            $countryVisaType->delete();
+
+            return response()->json([
+                'message' => 'Visa supprimé avec succès',
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Visa non trouvé.'
+            ], 404);
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de la suppression du visa: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Erreur serveur lors de la suppression du visa',
             ], 500);
         }
     }
