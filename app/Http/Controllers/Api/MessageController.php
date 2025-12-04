@@ -8,6 +8,7 @@ use App\Http\Requests\MessageRequest;
 use App\Models\Message;
 use App\Http\Resources\MessageResource;
 use App\Models\User;
+use App\Models\VisaRequest;
 use Illuminate\Support\Facades\Log;
 use Exception;
 use Illuminate\Support\Facades\Auth;
@@ -40,12 +41,14 @@ class MessageController extends Controller
 
             // Notification si AGENT écrit → notifier le CLIENT
             if (Auth::user()->hasRole('agent')) {
+                $visaRequest = VisaRequest::find($validated['visa_request_id']);
 
                 UserActionEvent::dispatch(
-                    User::find($validated['user_id']),
+                    User::find($visaRequest['user_id']),
                     [
                         "type" => "Message",
-                        "message" => "Nouveaux messages reçus"
+                        "message" => "Nouveaux messages agent",
+                        "link" => "/custom/chat/$message->visa_request_id"
                     ]
                 );
             } else {
@@ -59,7 +62,8 @@ class MessageController extends Controller
                         $agent,
                         [
                             "type" => "Message",
-                            "message" => "Nouveaux messages reçus",
+                            "message" => "Nouveaux messages client",
+                            "link" => "/agent/chat/{$validated['user_id']}/$message->visa_request_id"
                         ]
                     );
                 }

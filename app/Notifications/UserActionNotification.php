@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class UserActionNotification extends Notification
 {
@@ -36,7 +37,8 @@ class UserActionNotification extends Notification
     {
         return (new MailMessage)
             ->subject($this->data['type'])
-            ->line($this->data['message']);
+            ->line($this->data['message'])
+            ->action('voir', $this->data['link'] ?? "/");
     }
 
 
@@ -48,9 +50,13 @@ class UserActionNotification extends Notification
      */
     public function toArray($notifiable)
     {
+        Log::info("notification data", [$this->data]);
+
+
         return [
             'type' => $this->data['type'],
             'message' => $this->data['message'],
+            'link' => $this->data['link'] ?? "#",
         ];
     }
 }

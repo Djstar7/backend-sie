@@ -10,11 +10,11 @@ use App\Http\Controllers\Api\{
     NotificationController,
     ReceiptController,
     UserController,
-    VisaController,
     VisaRequestController,
     VisaTypeController,
     PaymentController,
     ProfilController,
+    VisaController
 };
 use Illuminate\Support\Facades\Route;
 

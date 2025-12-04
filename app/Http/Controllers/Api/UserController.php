@@ -106,6 +106,19 @@ class UserController extends Controller
                 "type" => "Bienvue",
                 "message" => "Bienvue dans notre plateforme $user->name"
             ]);
+            $admins = User::whereHas('roles', function ($q) {
+                $q->where('name', 'admin');
+            })->get();
+
+            foreach ($admins as $admin) {
+                UserActionEvent::dispatch(
+                    $admin,
+                    [
+                        "type" => "Bienvue",
+                        "message" => "Nouvelle utilisateur dans la plateforme $user->name"
+                    ]
+                );
+            }
             return response()->json([
                 'message' => 'Utilisateur créé et connecté avec succès',
                 'user' => new UserResource($user),
@@ -284,9 +297,7 @@ class UserController extends Controller
             $user = User::findOrFail($id);
             $user['numberVisaRequestPending'] = $user->visaRequests()->where('status', 'pending')->count();
             $user['numberMessageUnRead'] = $user->messages()->where('status', 'sent')->count();
-            Log::info('hsdbjksd', [$user]);
 
-            Log::info('gvfcvgj', [$user]);
             return response()->json([
                 'message' => 'Utilisateur récupéré avec succès',
                 'data' => $user

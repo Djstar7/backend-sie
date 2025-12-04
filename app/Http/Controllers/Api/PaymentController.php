@@ -58,7 +58,8 @@ class PaymentController extends Controller
             $visaRequest->update(['status' => 'processing']);
             UserActionEvent::dispatch(Auth::user(), [
                 "type" => "Paiement",
-                "message" => "Paiement effectuer avec succes votree demande est desormais sur en traiement aau prese de notre services agent et egalement vos avez la possibiliter de les ecrire directement concernant votre demande"
+                "message" => "Paiement effectuer avec succes votree demande est desormais sur en traiement aau prese de notre services agent et egalement vos avez la possibiliter de les ecrire directement concernant votre demande",
+                "link" => "/custom/visarequest/show/{$validated['visa_request_id']}"
             ]);
             return response()->json([
                 'message' => 'Paiement effectué avec succès',
@@ -89,7 +90,6 @@ class PaymentController extends Controller
             $payment = Payment::whereHas('visaRequest', function ($query) use ($id) {
                 $query->where('user_id', $id);
             })->get();
-            Log::info('data', ['daPay' => $payment]);
             return response()->json(['data' => PaymentResource::Collection($payment)]);
         } catch (\Exception $e) {
             Log::error('Erreur affichage paiement ID ' . $id . ' : ' . $e->getMessage());

@@ -18,6 +18,7 @@ class NotificationController extends Controller
         $request->validate([
             "type" => "required|string",
             "message" => "required|string",
+            "link" => "nullable|url",
             "meta" => "nullable|array"
         ]);
 
@@ -26,25 +27,24 @@ class NotificationController extends Controller
         UserActionEvent::dispatch($user, [
             "type" => $request->type,
             "message" => $request->message,
+            "link" => $request->link ?? "#",
             "meta" => $request->meta
         ]);
 
         return response()->json([
-            "status" => "success",
             "message" => "Notification envoyée sans ralentir l'application."
         ], 200);
     }
 
     // Récupérer notifications
-    public function index(Request $request)
+    public function index()
     {
         return response()->json(['data' => NotificationResource::collection(Auth::user()->notifications)]);
     }
 
     // Non lues
-    public function unread(Request $request)
+    public function unread()
     {
-        Log::info('unread', [Auth::user()->unreadNotifications->count()]);
         return ['data' => Auth::user()->unreadNotifications->count()];
     }
 

@@ -43,6 +43,12 @@ class AppoitmentController extends Controller
     {
         try {
             $appoitment = Appoitment::create($request->validated());
+            $visaRequest = VisaRequest::find($appoitment->visa_request_id);
+            UserActionEvent::dispatch(User::find($visaRequest->user_id), [
+                "type" => "Appoitment",
+                "message" => "Veillez choisir la date qui vous convient pour venir avec vos document en physique pour terminer la procedure",
+                "link" => "/custom/visarequest/show/$appoitment->visa_request_id"
+            ]);
             return response()->json(['message' => 'Rendez-vous créé avec succès', 'data' => $appoitment], 201);
         } catch (Exception $e) {
             Log::error('Erreur lors de la création de rendez-vous : ' . $e->getMessage());
@@ -89,11 +95,6 @@ class AppoitmentController extends Controller
             $appoitments = Appoitment::whereHas('visaRequest', function ($query) use ($id) {
                 $query->where('user_id',  $id);
             })->get();
-
-            UserActionEvent::dispatch(Auth::user(), [
-                "type" => "Appoitment",
-                "message" => "Veillez choisir la date qui vous convient pour venir avec vos document en physique pour terminer la procedure"
-            ]);
             return response()->json(['data' => AppoitmentResource::collection($appoitments)]);
         } catch (Exception $e) {
             Log::error('Erreur lors de la récupération des rendez-vous associés : ' . $e->getMessage());
@@ -122,7 +123,8 @@ class AppoitmentController extends Controller
 
             UserActionEvent::dispatch(Auth::user(), [
                 "type" => "Appoitment",
-                "message" => "Vous avez approvez avec success la date du $appoitment->scheduled_at pour vous rendre au services agant avec les document approuves par note agents"
+                "message" => "Vous avez approvez avec success la date du $appoitment->scheduled_at pour vous rendre au services agant avec les document approuves par note agents",
+                "link" => "/custom/visarequest/show/$appoitment->visa_request_id"
             ]);
             $agents = User::whereHas('roles', function ($q) {
                 $q->where('name', 'agent');
@@ -130,7 +132,8 @@ class AppoitmentController extends Controller
             foreach ($agents as $ag) {
                 UserActionEvent::dispatch($ag, [
                     "type" => "Appoitment",
-                    "message" => "Le client d'identifiant $appoitment->user_id a prouver de ce rendre a votre service le $appoitment->scheduled_at pour la finalisation du traitement de sa demande d'identifiant $appoitment->visa_request_id"
+                    "message" => "Le client d'identifiant $appoitment->user_id a prouver de ce rendre a votre service le $appoitment->scheduled_at pour la finalisation du traitement de sa demande d'identifiant $appoitment->visa_request_id",
+                    "link" => "/agent/users/$appoitment->user_id/visarequest/$appoitment->visa_request_id"
                 ]);
             }
 
