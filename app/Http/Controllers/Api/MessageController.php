@@ -47,7 +47,7 @@ class MessageController extends Controller
                     User::find($visaRequest['user_id']),
                     [
                         "type" => "Message",
-                        "message" => "Nouveaux messages agent",
+                        "message" => "$message->content",
                         "link" => "/custom/chat/$message->visa_request_id"
                     ]
                 );
@@ -62,7 +62,8 @@ class MessageController extends Controller
                         $agent,
                         [
                             "type" => "Message",
-                            "message" => "Nouveaux messages client",
+                            "author" => User::find($message->user_id)->name,
+                            "message" => "$message->content",
                             "link" => "/agent/chat/{$validated['user_id']}/$message->visa_request_id"
                         ]
                     );

@@ -25,6 +25,7 @@ class User extends Authenticatable
         'email',
         'phone',
         'password',
+        'image'
     ];
     protected $guard_name = 'sanctum';
 
@@ -91,5 +92,10 @@ class User extends Authenticatable
     function visaRequests()
     {
         return $this->hasMany(VisaRequest::class, 'user_id', 'id');
+    }
+
+    function avis()
+    {
+        return $this->hasMany(Avis::class, 'user_id', 'id');
     }
 }

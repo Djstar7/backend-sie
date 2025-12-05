@@ -37,6 +37,28 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property string $id
+ * @property string $user_id
+ * @property string $content
+ * @property int $rating
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\User $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Avis newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Avis newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Avis query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Avis whereContent($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Avis whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Avis whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Avis whereRating($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Avis whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Avis whereUserId($value)
+ */
+	class Avis extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property string $id
  * @property string $visa_request_id
  * @property string $file_path
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -355,10 +377,13 @@ namespace App\Models{
  * @property string $name
  * @property string $email
  * @property string $password
+ * @property string|null $image
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property string|null $remember_token
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Avis> $avis
+ * @property-read int|null $avis_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Log> $logs
  * @property-read int|null $logs_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Message> $messages
@@ -384,6 +409,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmailVerifiedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereImage($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePassword($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)

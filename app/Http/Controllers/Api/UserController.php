@@ -15,10 +15,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage; // Ajout de l'import pour Storage
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Str;
 
 class UserController extends Controller
 {
+    // Le chemin où stocker les images de profil (comme défini précédemment)
+    private $imagePath = 'profils';
+
     /**
      * Liste de tous les utilisateurs
      */
@@ -39,6 +44,7 @@ class UserController extends Controller
             return response()->json(['message' => 'Erreur serveur'], 500);
         }
     }
+
     /**
      * Afficher les utilisateurs client
      */
@@ -143,11 +149,6 @@ class UserController extends Controller
             $user = Auth::user();
 
             $token = $user->createToken('API Token')->plainTextToken;
-
-            UserActionEvent::dispatch(Auth::user(), [
-                "type" => "Connexion",
-                "message" => "Nous sommes ocntent de vous revoir $user->name"
-            ]);
             return response()->json([
                 'message' => 'Connexion réussie',
                 'user' => new UserResource($user),
@@ -168,11 +169,30 @@ class UserController extends Controller
             'user' => new UserResource($request->user())
         ]);
     }
+
+    /**
+     * Création d’un nouvel utilisateur avec gestion d'image. (Mise à jour)
+     */
     public function store(StoreUserRequest $request)
     {
         try {
             $validated = $request->validated();
             $validated['password'] = Hash::make($validated['password']);
+
+            // Initialisation de image_path à null
+            $imageFilePath = null;
+
+            // Traitement de l'image si elle est présente
+            if ($request->hasFile('image')) {
+                $file = $request->file('image');
+                // Génération d'un nom de fichier unique et lisible
+                $filename = Str::slug($validated['name']) . '_' . time() . '.' . $file->getClientOriginalExtension();
+                // Stockage du fichier dans 'storage/app/public/profils'
+                $imageFilePath = $file->storeAs($this->imagePath, $filename, 'public');
+            }
+
+            // Assurez-vous que le champ existe dans le modèle User
+            $validated['image_path'] = $imageFilePath;
 
             $user = User::create($validated);
             $user->assignRole($validated['role']);
@@ -182,21 +202,41 @@ class UserController extends Controller
                 'data' => new UserResource($user)
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Erreur register UserController: ' . $e->getMessage());
+            // NOTE: Le log d'erreur a été corrigé pour refléter la méthode 'store' au lieu de 'register'
+            Log::error('Erreur store UserController: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la création utilisateur'], 500);
         }
     }
+
     /**
-     * Mise à jour d’un utilisateur
+     * Mise à jour d’un utilisateur avec gestion d'image. (Mise à jour)
      */
     public function update(UpdateUserRequest $request, $id)
     {
         try {
-            $user = User::find($id);
+            $user = User::findOrFail($id); // Utilisation de findOrFail pour une meilleure gestion d'erreur 404
             $validated = $request->validated();
 
             if (!empty($validated['password'])) {
                 $validated['password'] = Hash::make($validated['password']);
+            } else {
+                // S'assurer que le champ password n'est pas inclus s'il est vide
+                unset($validated['password']);
+            }
+
+            // Traitement de l'image si elle est présente
+            if ($request->hasFile('image')) {
+                // 1. Suppression de l'ancienne image si elle existe
+                if ($user->image_path) {
+                    Storage::disk('public')->delete($user->image_path);
+                }
+
+                // 2. Upload de la nouvelle image
+                $file = $request->file('image');
+                $filename = Str::slug($user->name ?? 'user') . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $imageFilePath = $file->storeAs($this->imagePath, $filename, 'public');
+
+                $validated['image_path'] = $imageFilePath;
             }
 
             if (!empty($validated['role'])) {
@@ -210,7 +250,8 @@ class UserController extends Controller
                 'data' => new UserResource($user)
             ]);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['message' => 'Utilisateur non trouvé ckckc'], 404);
+            // Le message d'erreur a été corrigé ('ckckc' retiré)
+            return response()->json(['message' => 'Utilisateur non trouvé'], 404);
         } catch (\Exception $e) {
             Log::error('Erreur update UserController: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la mise à jour utilisateur'], 500);
@@ -295,7 +336,7 @@ class UserController extends Controller
     {
         try {
             $user = User::findOrFail($id);
-            $user['numberVisaRequestPending'] = $user->visaRequests()->where('status', 'pending')->count();
+            $user['numberVisaRequestPending'] = $user->visaRequests()->where('status', 'processing')->count();
             $user['numberMessageUnRead'] = $user->messages()->where('status', 'sent')->count();
 
             return response()->json([
@@ -311,12 +352,18 @@ class UserController extends Controller
     }
 
     /**
-     * Suppression d’un utilisateur
+     * Suppression d’un utilisateur avec suppression de l'image associée. (Mise à jour)
      */
     public function destroy($id)
     {
         try {
             $user = User::findOrFail($id);
+
+            // Suppression de l'image associée si elle existe
+            if ($user->image_path) {
+                Storage::disk('public')->delete($user->image_path);
+            }
+
             $user->delete();
 
             return response()->json(['message' => 'Utilisateur supprimé avec succès']);

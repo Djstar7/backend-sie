@@ -49,7 +49,8 @@ class VisaRequestController extends Controller
 
             UserActionEvent::dispatch(Auth::user(), [
                 "type" => "Demande visa",
-                "message" => Auth::user()->name . 'Vous avez creer avec succes la demande d\'indices ' . $visaRequest->id
+                "message" => Auth::user()->name . ' Vous avez creer avec succes la demande ' . $request['visa_type_name'] . ' pour ' . $request['country_dest_name'],
+                "link" => "/custom/visarequest/show/{$visaRequest->id}"
             ]);
 
             return response()->json([

@@ -132,7 +132,8 @@ class AppoitmentController extends Controller
             foreach ($agents as $ag) {
                 UserActionEvent::dispatch($ag, [
                     "type" => "Appoitment",
-                    "message" => "Le client d'identifiant $appoitment->user_id a prouver de ce rendre a votre service le $appoitment->scheduled_at pour la finalisation du traitement de sa demande d'identifiant $appoitment->visa_request_id",
+                    "author" => User::find($appoitment->user_id)->name,
+                    "message" => "Le client  a approuver de ce rendre a votre service le $appoitment->scheduled_at pour la finalisation du traitement de sa demande d'identifiant",
                     "link" => "/agent/users/$appoitment->user_id/visarequest/$appoitment->visa_request_id"
                 ]);
             }

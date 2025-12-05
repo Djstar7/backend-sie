@@ -5,19 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Str;
 
-class Appoitment extends Model
+class Avis extends Model
 {
+    protected $table = 'avis';
 
-    use \Illuminate\Database\Eloquent\Factories\HasFactory;
-    protected $table = "appoitments";
     protected $fillable = [
-        'visa_request_id',
-        'scheduled_at',
-        'status',
-    ];
-
-    protected $casts = [
-        'scheduled_at' => 'datetime',
+        'user_id',
+        'content',
+        'rating'
     ];
     public $incrementing = false; // pas d'auto-incrément
     protected $keyType = 'string'; // l'id est un string
@@ -32,8 +27,9 @@ class Appoitment extends Model
             }
         });
     }
-    public function visaRequest()
+
+    function user()
     {
-        return $this->belongsTo(VisaRequest::class, 'visa_request_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

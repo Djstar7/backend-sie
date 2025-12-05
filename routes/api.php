@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\{
     ProfilController,
     VisaController
 };
+use App\Http\Controllers\AvisController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [UserController::class, 'register']);
@@ -33,6 +34,7 @@ Route::get('/payment/return', [PaymentController::class, 'returnFromGateway'])->
 Route::get('/payment/status/{reference}', [PaymentController::class, 'checkStatus']);
 
 Route::get('/documentation', [DocumentationController::class, 'index']);
+Route::get('/avis', [AvisController::class, 'index']);
 
 // Groupe API avec Sanctum pour l’authentification
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -55,6 +57,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/country', [CountryController::class, 'index']);
     Route::get('/country/show/{id}', [CountryController::class, 'show']);
+
+    Route::get('/avis/show/{id}', [AvisController::class, 'show']);
+    Route::post('/avis/store', [AvisController::class, 'store']);
+    Route::put('/avis/update/{id}', [AvisController::class, 'update']);
+    Route::delete('/avis/delete/{id}', [AvisController::class, 'destroy']);
 
     Route::get('/visatype', [VisaTypeController::class, 'index']);
     Route::get('/visarequest/show/{id}', [VisaRequestController::class, 'show']);

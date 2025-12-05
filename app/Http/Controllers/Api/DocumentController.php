@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\UserActionEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DocumentStoreRequest;
 use App\Http\Requests\DocumentUpdateRequest;
 use App\Http\Requests\DocumentUpdateStatusRequest;
 use App\Http\Resources\DocumentResource;
 use App\Models\Document;
+use App\Models\User;
 use App\Models\VisaRequest;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -187,6 +189,18 @@ class DocumentController extends Controller
             }
             if ($numberTrue === $numberDoc) {
                 VisaRequest::find($visaRequestId)->update(['status' => 'approved']);
+                $agents = User::whereHas('roles', function ($q) {
+                    $q->where('name', 'agent');
+                });
+                $visaRequest = VisaRequest::find($document->visa_request_id);
+                foreach ($agents as $ag) {
+                    UserActionEvent::dispatch($ag, [
+                        "type" => "Appoitment",
+                        "author" => User::find($visaRequest->user_id)->name,
+                        "message" => "Les document du client sont conforment, veuillez veillez suggerer les rendez-vous au client pour qu'il puisse choisir celle qui le convient",
+                        "link" => "/agent/users/$visaRequest->user_id/visarequest/$document->visa_request_id"
+                    ]);
+                }
             }
             return response()->json(['data' => new DocumentResource($document)]);
         } catch (Exception $e) {

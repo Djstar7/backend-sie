@@ -27,6 +27,7 @@ class UpdateUserRequest extends FormRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'password' => 'nullable|string|min:6',
+            'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048'
         ];
     }
 
@@ -40,6 +41,9 @@ class UpdateUserRequest extends FormRequest
         return [
             'name.required' => 'Le nom est requis.',
             'email.required' => 'L\'email est requis.',
+            'email.email' => 'L\'adresse email n\'est pas valide.',
+            'image.mimes' => 'Le format de l\'image doit être jpeg, png, jpg ou gif.',
+            'image.max' => 'La taille maximale de l\'image ne doit pas dépasser 2Mo.'
         ];
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Requests\PaymentRequest;
 use App\Http\Requests\UpdatePaymentRequest;
 use App\Models\Payment;
 use App\Http\Resources\PaymentResource;
+use App\Models\User;
 use App\Models\VisaRequest;
 use Illuminate\Support\Facades\Log;
 use App\Services\NotchPayService;
@@ -57,9 +58,16 @@ class PaymentController extends Controller
             $visaRequest = VisaRequest::find($validated['visa_request_id']);
             $visaRequest->update(['status' => 'processing']);
             UserActionEvent::dispatch(Auth::user(), [
-                "type" => "Paiement",
-                "message" => "Paiement effectuer avec succes votree demande est desormais sur en traiement aau prese de notre services agent et egalement vos avez la possibiliter de les ecrire directement concernant votre demande",
+                "type" => "Payment",
+                "message" => "Paiement effectuer avec succes votre demande est desormais sur en traitement au pres de notre service agent et egalement vos avez la possibilite de les ecrire directement concernant votre demande",
                 "link" => "/custom/visarequest/show/{$validated['visa_request_id']}"
+            ]);
+            $userName = User::find($validated['visa_request_id'])->name;
+            UserActionEvent::dispatch(Auth::user(), [
+                "type" => "Paiement",
+                "author" => $userName,
+                "message" => "Nouvelle demande a traiter soumise par $userName",
+                "link" => "/agent/users/$visaRequest->user_id/visarequest/{$validated['visa_request_id']}"
             ]);
             return response()->json([
                 'message' => 'Paiement effectué avec succès',
@@ -67,7 +75,7 @@ class PaymentController extends Controller
             ], 201);
         } catch (\Exception $e) {
             Log::error('Erreur création paiement : ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur lors de la création du paiement : ' . $e->getMessage()], 500);
+            return response()->json(['message' => 'Erreur lors de la création du paiement '], 500);
         }
     }
 

@@ -26,6 +26,7 @@ class UpdateCustomByAdminRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email',
+            'image' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'phone' => 'required|string|max:20',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -45,12 +46,15 @@ class UpdateCustomByAdminRequest extends FormRequest
     public function messages()
     {
         return [
-            'name.required'=> 'LE nom est requis.',
-            'name.string'=> 'Le nom doit etre une chanie de caracteres',
-            'name.max'=> 'Le nom doit avaoir maximum 255 caracterea',
+            'name.required' => 'LE nom est requis.',
+            'name.string' => 'Le nom doit etre une chanie de caracteres',
+            'name.max' => 'Le nom doit avaoir maximum 255 caracterea',
 
             'email.required' => 'L\'email est requis.',
             'email.email' => 'L\'email doit être une adresse valide.',
+
+            'image.mimes'  => 'L\'image doit avoir un format jpeg, png, jpg, gif ou svg.',
+            'image.max'   => 'L\'image ne doit pas dépasser 2048 kilo-octets (2 Mo).',
 
             'phone.string' => 'Le téléphone doit être une chaîne de caractères.',
             'phone.max' => 'Le téléphone ne doit pas dépasser 20 caractères.',
@@ -78,7 +82,7 @@ class UpdateCustomByAdminRequest extends FormRequest
             'status_mat.in' => 'Le statut doit être soit célibataire, marié, divorcé ou veuf.',
 
             'nationality.required' => 'La nationalité est requiise.',
-            'nationality.string'=> 'La nationalite dois etre une chaine de caractere',
+            'nationality.string' => 'La nationalite dois etre une chaine de caractere',
         ];
     }
 }
