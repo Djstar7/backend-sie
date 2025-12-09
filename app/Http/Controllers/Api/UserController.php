@@ -267,7 +267,7 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['message' => 'Utilisateur non trouve'], 404);
         }
-        $user->tokens()->delete();
+        $user->currentAccessToken()->delete();
         return response()->json(['message' => 'Utilisateur deconnecter avec success'], 200);
     }
 

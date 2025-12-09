@@ -7,36 +7,53 @@ use Illuminate\Foundation\Http\FormRequest;
 class VisaUpdateRequest extends FormRequest
 {
     /**
-     * Autoriser ou non la requête
+     * Determine if the user is authorized to make this request.
      */
-    public function authorize(): bool
+    public function authorize()
     {
         return true;
     }
 
     /**
-     * Règles de validation
+     * Validation rules for updating a visa.
      */
-    public function rules(): array
+    public function rules()
     {
         return [
-            'price_base' => 'nullable|numeric',
-            'price_per_child' => 'nullable|numeric',
-            'processing_duration_min' => 'nullable|integer',
-            'processing_duration_max' => 'nullable|integer',
+            'country_name' => 'sometimes|string',
+            'visa_type_name' => 'sometimes|string',
+            'price_base' => 'sometimes|numeric',
+            'price_per_child' => 'sometimes|numeric|nullable',
+            'processing_duration_min' => 'sometimes|integer',
+            'processing_duration_max' => 'sometimes|integer',
+
+            'status_mat' => 'sometimes|in:single,married,divorced,widowed',
+            'min_age' => 'sometimes|integer',
+            'max_age' => 'sometimes|integer',
+
+            'documents' => 'sometimes|array',
+            'documents.*' => 'string|max:255',
         ];
     }
 
     /**
-     * Messages d'erreur personnalisés
+     * Custom messages.
      */
-    public function messages(): array
+    public function messages()
     {
         return [
+            'country_name.string' => 'Le nom du pays doit être une chaîne de caractères.',
+            'visa_type_name.string' => 'Le nom du type de visa doit être une chaîne de caractères.',
             'price_base.numeric' => 'Le prix de base doit être un nombre.',
             'price_per_child.numeric' => 'Le prix par enfant doit être un nombre.',
-            'processing_duration_min.integer' => 'La durée minimale de traitement doit être un entier.',
-            'processing_duration_max.integer' => 'La durée maximale de traitement doit être un entier.',
+            'processing_duration_min.integer' => 'La durée minimale doit être un entier.',
+            'processing_duration_max.integer' => 'La durée maximale doit être un entier.',
+            'status_mat.in' => 'Le statut matrimonial doit être : single, married, divorced, widowed.',
+            'min_age.integer' => 'L\'âge minimum doit être un entier.',
+            'max_age.integer' => 'L\'âge maximum doit être un entier.',
+            'documents.array' => 'La liste des documents doit être un tableau.',
+            'documents.*.string' => 'Chaque document doit être une chaîne de caractères.',
+            'documents.*.max' => 'Chaque document ne doit pas dépasser 255 caractères.',
         ];
     }
 }

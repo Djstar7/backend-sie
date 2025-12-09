@@ -78,8 +78,9 @@ class VisaController extends Controller
                 $visaType = VisaType::where('name', $data['visa_type_name'])->firstOrFail();
 
                 $countryVisaType = CountryVisaType::updateOrCreate(
-                    ['country_id' => $country->id, 'visa_type_id' => $visaType->id],
                     [
+                        'country_id' => $country->id,
+                        'visa_type_id' => $visaType->id,
                         'price_base' => $data['price_base'],
                         'price_per_child' => $data['price_per_child'] ?? 0,
                         'processing_duration_min' => $data['processing_duration_min'],
@@ -89,20 +90,23 @@ class VisaController extends Controller
 
                 $documentIds = [];
                 foreach ($data['documents'] as $docName) {
-                    $document = RequiredDocument::firstOrCreate(
-                        [
-                            'name' => $docName,
+
+                    $document = RequiredDocument::where([
+                        'name'       => $docName,
+                        'status_mat' => $data['status_mat'],
+                        'min_age'    => $data['min_age'],
+                        'max_age'    => $data['max_age'],
+                    ])
+                        ->first();
+
+                    if (!$document) {
+                        $document = RequiredDocument::create([
+                            'name'       => $docName,
                             'status_mat' => $data['status_mat'],
-                            'min_age' => $data['min_age'],
-                            'max_age' => $data['max_age'],
-                        ],
-                        [
-                            'name' => $docName,
-                            'status_mat' => $data['status_mat'],
-                            'min_age' => $data['min_age'],
-                            'max_age' => $data['max_age'],
-                        ]
-                    );
+                            'min_age'    => $data['min_age'],
+                            'max_age'    => $data['max_age'],
+                        ]);
+                    }
 
                     $documentIds[] = $document->id;
                 }
@@ -163,15 +167,73 @@ class VisaController extends Controller
     public function update(string $countryVisaTypeId, VisaUpdateRequest $request)
     {
         try {
-            $validated = $request->validated();
+            $data = $request->validated();
+            Log::info($request);
 
-            $countryVisaType = CountryVisaType::findOrFail($countryVisaTypeId);
-            $countryVisaType->update($validated);
+            DB::transaction(function () use ($countryVisaTypeId, $data) {
+
+                $countryVisaType = CountryVisaType::findOrFail($countryVisaTypeId);
+
+                /* -------------------------
+               UPDATE COUNTRY & VISA TYPE
+            --------------------------*/
+                $data['country_id'] = isset($data['country_name'])
+                    ? Country::where('name', $data['country_name'])->firstOrFail()->id
+                    : $countryVisaType->country_id;
+
+                $data['visa_type_id'] = isset($data['visa_type_name'])
+                    ? VisaType::where('name', $data['visa_type_name'])->firstOrFail()->id
+                    : $countryVisaType->visa_type_id;
+
+                /* -------------------------
+               UPDATE MAIN VISA FIELDS
+            --------------------------*/
+                $countryVisaType->update([
+                    'country_id'               => $data['country_id'],
+                    'visa_type_id'             => $data['visa_type_id'],
+                    'price_base'               => $data['price_base'] ?? $countryVisaType->price_base,
+                    'price_per_child'          => $data['price_per_child'] ?? $countryVisaType->price_per_child,
+                    'processing_duration_min'  => $data['processing_duration_min'] ?? $countryVisaType->processing_duration_min,
+                    'processing_duration_max'  => $data['processing_duration_max'] ?? $countryVisaType->processing_duration_max,
+                ]);
+
+                /* -------------------------
+               HANDLE DOCUMENTS
+            --------------------------*/
+                if (isset($data['documents'])) {
+
+                    $documentIds = [];
+
+                    foreach ($data['documents'] as $docName) {
+
+                        $document = RequiredDocument::where([
+                            'name'       => $docName,
+                            'status_mat' => $data['status_mat'] ?? $countryVisaType->status_mat,
+                            'min_age'    => $data['min_age'] ?? $countryVisaType->min_age,
+                            'max_age'    => $data['max_age'] ?? $countryVisaType->max_age,
+                        ])->first();
+
+                        // Créer le document si inexistant
+                        if (!$document) {
+                            $document = RequiredDocument::create([
+                                'name'       => $docName,
+                                'status_mat' => $data['status_mat'] ?? $countryVisaType->status_mat,
+                                'min_age'    => $data['min_age'] ?? $countryVisaType->min_age,
+                                'max_age'    => $data['max_age'] ?? $countryVisaType->max_age,
+                            ]);
+                        }
+
+                        $documentIds[] = $document->id;
+                    }
+
+                    // 🔥 Ici on REMPLACE totalement la liste des documents rattachés
+                    $countryVisaType->requiredDocuments()->sync($documentIds);
+                }
+            });
 
             return response()->json([
-                'data' => new VisaResource($countryVisaType),
                 'message' => 'Visa mis à jour avec succès',
-            ]);
+            ], 200);
         } catch (\Exception $e) {
             Log::error('Erreur mise à jour visa: ' . $e->getMessage());
             return response()->json([
@@ -179,6 +241,9 @@ class VisaController extends Controller
             ], 500);
         }
     }
+
+
+
 
     public function destroy(string $countryVisaTypeId)
     {

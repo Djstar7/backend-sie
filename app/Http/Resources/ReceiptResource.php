@@ -10,7 +10,7 @@ class ReceiptResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'file_path'  => $this->file_path,
+            'file_path'  => $this->file_path ?? null,
             'payment'    => [
                 'amount'         => $this->payment->amount,
                 'transaction_id' => $this->payment->transaction_id,
