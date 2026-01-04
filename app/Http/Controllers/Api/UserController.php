@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Jobs\SendAccountDeletionRequestEmails;
 use Str;
 
 class UserController extends Controller
@@ -493,32 +494,11 @@ class UserController extends Controller
                 ], 404);
             }
 
-            // Envoyer un email de confirmation a l'administrateur
-            \Illuminate\Support\Facades\Mail::raw(
-                "Demande de suppression de compte\n\n" .
-                "Email: {$request->email}\n" .
-                "Nom: {$user->name}\n" .
-                "Date: " . now()->format('d/m/Y H:i') . "\n" .
-                "Raison: " . ($request->reason ?? 'Non specifiee') . "\n\n" .
-                "Veuillez traiter cette demande dans un delai de 30 jours conformement au RGPD.",
-                function ($message) {
-                    $message->to(config('mail.from.address'))
-                            ->subject('Demande de suppression de compte - SIE');
-                }
-            );
-
-            // Envoyer un email de confirmation a l'utilisateur
-            \Illuminate\Support\Facades\Mail::raw(
-                "Bonjour {$user->name},\n\n" .
-                "Nous avons bien recu votre demande de suppression de compte.\n\n" .
-                "Votre demande sera traitee dans un delai maximum de 30 jours conformement au RGPD.\n" .
-                "Vous recevrez une confirmation une fois la suppression effectuee.\n\n" .
-                "Si vous n'etes pas a l'origine de cette demande, veuillez nous contacter immediatement.\n\n" .
-                "Cordialement,\nL'equipe SIE",
-                function ($message) use ($request) {
-                    $message->to($request->email)
-                            ->subject('Confirmation de demande de suppression - SIE');
-                }
+            // Dispatcher l'envoi des emails en arriere-plan
+            SendAccountDeletionRequestEmails::dispatch(
+                $request->email,
+                $user->name,
+                $request->reason
             );
 
             return response()->json([
