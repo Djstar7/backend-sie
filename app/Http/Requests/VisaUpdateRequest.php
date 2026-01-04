@@ -27,7 +27,8 @@ class VisaUpdateRequest extends FormRequest
             'processing_duration_min' => 'sometimes|integer',
             'processing_duration_max' => 'sometimes|integer',
 
-            'status_mat' => 'sometimes|in:single,married,divorced,widowed',
+            'status_mat' => 'sometimes|array|min:1',
+            'status_mat.*' => 'in:single,married,divorced,widowed',
             'min_age' => 'sometimes|integer',
             'max_age' => 'sometimes|integer',
 
@@ -48,7 +49,9 @@ class VisaUpdateRequest extends FormRequest
             'price_per_child.numeric' => 'Le prix par enfant doit être un nombre.',
             'processing_duration_min.integer' => 'La durée minimale doit être un entier.',
             'processing_duration_max.integer' => 'La durée maximale doit être un entier.',
-            'status_mat.in' => 'Le statut matrimonial doit être : single, married, divorced, widowed.',
+            'status_mat.array' => 'Le statut matrimonial doit être un tableau.',
+            'status_mat.min' => 'Au moins un statut matrimonial doit être sélectionné.',
+            'status_mat.*.in' => 'Le statut matrimonial doit être : single, married, divorced, widowed.',
             'min_age.integer' => 'L\'âge minimum doit être un entier.',
             'max_age.integer' => 'L\'âge maximum doit être un entier.',
             'documents.array' => 'La liste des documents doit être un tableau.',

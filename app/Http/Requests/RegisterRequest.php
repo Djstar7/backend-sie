@@ -26,7 +26,22 @@ class RegisterRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                function ($attribute, $value, $fail) {
+                    $conditionsMet = 0;
+                    if (preg_match('/[a-z]/', $value)) $conditionsMet++;
+                    if (preg_match('/[A-Z]/', $value)) $conditionsMet++;
+                    if (preg_match('/\d/', $value)) $conditionsMet++;
+                    if (preg_match('/[^A-Za-z0-9]/', $value)) $conditionsMet++;
+
+                    if ($conditionsMet < 3) {
+                        $fail('Le mot de passe doit contenir au moins 3 des 4 criteres : minuscule, majuscule, chiffre, caractere special.');
+                    }
+                },
+            ],
         ];
     }
 

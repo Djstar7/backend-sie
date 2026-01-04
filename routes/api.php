@@ -2,12 +2,16 @@
 
 use App\Http\Controllers\Api\{
     AppoitmentController,
+    ContactController,
     CountryController,
     DocumentController,
     DocumentationController,
+    EmailVerificationController,
     FaqChabotController,
+    ListDocumentRequiredController,
     MessageController,
     NotificationController,
+    PasswordResetController,
     ReceiptController,
     UserController,
     VisaRequestController,
@@ -19,8 +23,32 @@ use App\Http\Controllers\Api\{
 use App\Http\Controllers\AvisController;
 use Illuminate\Support\Facades\Route;
 
+// =============================================
+// ROUTES D'AUTHENTIFICATION PUBLIQUES
+// =============================================
+
 Route::post('/auth/register', [UserController::class, 'register']);
 Route::post('/auth/login', [UserController::class, 'login']);
+Route::post('/auth/check-email', [UserController::class, 'checkEmailExists']);
+Route::post('/auth/firebase', [UserController::class, 'loginWithFirebase']);
+
+// Routes de verification email par OTP
+Route::post('/auth/email/send-code', [EmailVerificationController::class, 'sendCode']);
+Route::post('/auth/email/resend-code', [EmailVerificationController::class, 'resendCode']);
+Route::post('/auth/email/verify-code', [EmailVerificationController::class, 'verifyCode']);
+Route::post('/auth/email/check-verified', [EmailVerificationController::class, 'checkVerified']);
+
+// Routes de reinitialisation de mot de passe
+Route::post('/auth/password/send-link', [PasswordResetController::class, 'sendResetLink']);
+Route::post('/auth/password/verify-token', [PasswordResetController::class, 'verifyToken']);
+Route::post('/auth/password/reset', [PasswordResetController::class, 'resetPassword']);
+
+// Route de demande de suppression de compte (RGPD)
+Route::post('/auth/delete-account', [UserController::class, 'requestAccountDeletion']);
+
+// =============================================
+// ROUTES PUBLIQUES
+// =============================================
 
 Route::get('/faqchat', [FaqChabotController::class, 'index']);
 
@@ -36,7 +64,16 @@ Route::get('/payment/status/{reference}', [PaymentController::class, 'checkStatu
 Route::get('/documentation', [DocumentationController::class, 'index']);
 Route::get('/avis', [AvisController::class, 'index']);
 
-// Groupe API avec Sanctum pour l’authentification
+// Routes publiques pour les documents requis (lecture seule)
+Route::get('/list-document-required', [ListDocumentRequiredController::class, 'index']);
+Route::get('/list-document-required/grouped', [ListDocumentRequiredController::class, 'indexGrouped']);
+Route::get('/list-document-required/categories', [ListDocumentRequiredController::class, 'categories']);
+Route::get('/list-document-required/show/{id}', [ListDocumentRequiredController::class, 'show']);
+
+// Route publique pour le formulaire de contact
+Route::post('/contact', [ContactController::class, 'send']);
+
+// Groupe API avec Sanctum pour l'authentification
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/auth/logout', [UserController::class, 'logout']);
 
@@ -145,7 +182,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/faqchat/update/{id}', [FaqChabotController::class, 'update']);
         Route::delete('/faqchat/delete/{id}', [FaqChabotController::class, 'destroy']);
 
-
+        // CRUD Documents requis (admin only)
+        Route::post('/list-document-required/store', [ListDocumentRequiredController::class, 'store']);
+        Route::put('/list-document-required/update/{id}', [ListDocumentRequiredController::class, 'update']);
+        Route::delete('/list-document-required/delete/{id}', [ListDocumentRequiredController::class, 'destroy']);
+        Route::put('/list-document-required/toggle-active/{id}', [ListDocumentRequiredController::class, 'toggleActive']);
 
         Route::get('/user', [UserController::class, 'index']);
     });

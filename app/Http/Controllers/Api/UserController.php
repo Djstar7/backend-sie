@@ -9,13 +9,14 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
+use App\Models\EmailVerification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\Storage; // Ajout de l'import pour Storage
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Str;
 
@@ -96,22 +97,42 @@ class UserController extends Controller
 
     /**
      * Inscription utilisateur (Session)
+     * L'email doit etre verifie par OTP avant l'inscription
      */
     public function register(RegisterRequest $request)
     {
         try {
             $validated = $request->validated();
+
+            // Verifier que l'email a ete valide par OTP
+            $emailVerified = EmailVerification::where('email', $validated['email'])
+                ->where('verified', true)
+                ->first();
+
+            if (!$emailVerified) {
+                return response()->json([
+                    'message' => 'Email non verifie. Veuillez d\'abord verifier votre email.'
+                ], 403);
+            }
+
             $validated['password'] = Hash::make($validated['password']);
+            $validated['email_verified_at'] = now();
 
             $user = User::create($validated);
             $user->assignRole('custom');
             $token = $user->createToken('API Token')->plainTextToken;
             Auth::login($user);
 
+            // Supprimer la verification email apres inscription reussie
+            $emailVerified->delete();
+
+            // Notification de bienvenue
             UserActionEvent::dispatch(Auth::user(), [
-                "type" => "Bienvue",
-                "message" => "Bienvue dans notre plateforme $user->name"
+                "type" => "Bienvenue",
+                "message" => "Bienvenue dans notre plateforme $user->name."
             ]);
+
+            // Notifier les admins
             $admins = User::whereHas('roles', function ($q) {
                 $q->where('name', 'admin');
             })->get();
@@ -120,19 +141,21 @@ class UserController extends Controller
                 UserActionEvent::dispatch(
                     $admin,
                     [
-                        "type" => "Bienvue",
-                        "message" => "Nouvelle utilisateur dans la plateforme $user->name"
+                        "type" => "Nouveau membre",
+                        "message" => "Nouvel utilisateur inscrit: $user->name"
                     ]
                 );
             }
+
             return response()->json([
-                'message' => 'Utilisateur créé et connecté avec succès',
+                'message' => 'Inscription reussie.',
                 'user' => new UserResource($user),
-                'access_token' => $token
+                'access_token' => $token,
+                'email_verified' => true
             ], 201);
         } catch (\Exception $e) {
             Log::error('Erreur register UserController: ' . $e->getMessage());
-            return response()->json(['message' => 'Erreur serveur lors de la création utilisateur'], 500);
+            return response()->json(['message' => 'Erreur serveur lors de la creation utilisateur'], 500);
         }
     }
 
@@ -168,6 +191,81 @@ class UserController extends Controller
         return response()->json([
             'user' => new UserResource($request->user())
         ]);
+    }
+
+    /**
+     * Vérifier si un email existe déjà
+     */
+    public function checkEmailExists(Request $request)
+    {
+        try {
+            $validated = $request->validate(['email' => 'required|email']);
+            $exists = User::where('email', $validated['email'])->exists();
+
+            return response()->json([
+                'exists' => $exists,
+                'message' => $exists ? 'Email déjà utilisé' : 'Email disponible'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur checkEmailExists UserController: ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur serveur'], 500);
+        }
+    }
+
+    /**
+     * Connexion/Inscription via Firebase OAuth
+     */
+    public function loginWithFirebase(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'firebase_token' => 'required|string',
+                'firebase_uid' => 'required|string',
+                'email' => 'nullable|email',
+                'name' => 'nullable|string',
+                'photo_url' => 'nullable|string',
+                'provider' => 'required|string',
+            ]);
+
+            // Chercher l'utilisateur par firebase_uid ou email
+            $user = User::where('firebase_uid', $validated['firebase_uid'])
+                ->orWhere('email', $validated['email'])
+                ->first();
+
+            if (!$user) {
+                // Créer un nouvel utilisateur
+                $user = User::create([
+                    'name' => $validated['name'] ?? 'Utilisateur',
+                    'email' => $validated['email'],
+                    'firebase_uid' => $validated['firebase_uid'],
+                    'image_path' => $validated['photo_url'],
+                    'password' => Hash::make(Str::random(32)), // Mot de passe aléatoire
+                    'email_verified_at' => now(), // OAuth = email vérifié
+                ]);
+                $user->assignRole('custom');
+            } else {
+                // Mettre à jour le firebase_uid si nécessaire
+                if (!$user->firebase_uid) {
+                    $user->update(['firebase_uid' => $validated['firebase_uid']]);
+                }
+                // Marquer l'email comme vérifié si ce n'est pas fait
+                if (!$user->hasVerifiedEmail()) {
+                    $user->markEmailAsVerified();
+                }
+            }
+
+            Auth::login($user);
+            $token = $user->createToken('API Token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Connexion réussie',
+                'user' => new UserResource($user),
+                'access_token' => $token
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erreur loginWithFirebase UserController: ' . $e->getMessage());
+            return response()->json(['message' => 'Erreur serveur lors de la connexion Firebase'], 500);
+        }
     }
 
     /**
@@ -372,6 +470,70 @@ class UserController extends Controller
         } catch (\Exception $e) {
             Log::error('Erreur destroy UserController: ' . $e->getMessage());
             return response()->json(['message' => 'Erreur serveur lors de la suppression'], 500);
+        }
+    }
+
+    /**
+     * Demande de suppression de compte (RGPD)
+     * Enregistre la demande et envoie un email de confirmation
+     */
+    public function requestAccountDeletion(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email|exists:users,email',
+                'reason' => 'nullable|string|max:1000',
+            ]);
+
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Aucun compte trouve avec cet email'
+                ], 404);
+            }
+
+            // Envoyer un email de confirmation a l'administrateur
+            \Illuminate\Support\Facades\Mail::raw(
+                "Demande de suppression de compte\n\n" .
+                "Email: {$request->email}\n" .
+                "Nom: {$user->name}\n" .
+                "Date: " . now()->format('d/m/Y H:i') . "\n" .
+                "Raison: " . ($request->reason ?? 'Non specifiee') . "\n\n" .
+                "Veuillez traiter cette demande dans un delai de 30 jours conformement au RGPD.",
+                function ($message) {
+                    $message->to(config('mail.from.address'))
+                            ->subject('Demande de suppression de compte - SIE');
+                }
+            );
+
+            // Envoyer un email de confirmation a l'utilisateur
+            \Illuminate\Support\Facades\Mail::raw(
+                "Bonjour {$user->name},\n\n" .
+                "Nous avons bien recu votre demande de suppression de compte.\n\n" .
+                "Votre demande sera traitee dans un delai maximum de 30 jours conformement au RGPD.\n" .
+                "Vous recevrez une confirmation une fois la suppression effectuee.\n\n" .
+                "Si vous n'etes pas a l'origine de cette demande, veuillez nous contacter immediatement.\n\n" .
+                "Cordialement,\nL'equipe SIE",
+                function ($message) use ($request) {
+                    $message->to($request->email)
+                            ->subject('Confirmation de demande de suppression - SIE');
+                }
+            );
+
+            return response()->json([
+                'message' => 'Demande de suppression enregistree avec succes'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Aucun compte trouve avec cet email',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Erreur requestAccountDeletion UserController: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Erreur lors de la demande de suppression'
+            ], 500);
         }
     }
 }

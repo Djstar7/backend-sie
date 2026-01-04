@@ -8,25 +8,17 @@ use Str;
 class RequiredDocument extends Model
 {
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
+
     protected $table = 'required_documents';
 
-
+    // Les documents ne contiennent que le nom
+    // Les criteres d'eligibilite (status_mat, min_age, max_age) sont dans la table pivot
     protected $fillable = [
         'name',
-        'status_mat',
-        'min_age',
-        'max_age',
     ];
 
-    /**
-     * Le statut matrimonial, tu peux aussi créer une constante pour les valeurs possibles.
-     */
-    const STATUS_MAT_SINGLE = 'single';
-    const STATUS_MAT_MARRIED = 'married';
-    const STATUS_MAT_DIVORCED = 'divorced';
-    const STATUS_MAT_WIDOWED = 'widowed';
-    public $incrementing = false; // pas d'auto-incrément
-    protected $keyType = 'string'; // l'id est un string
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected static function boot(): void
     {
@@ -38,8 +30,11 @@ class RequiredDocument extends Model
             }
         });
     }
+
     public function countryVisaTypes()
     {
-        return $this->belongsToMany(CountryVisaType::class, 'country_visa_type_required_document', 'required_document_id', 'country_visa_type_id');
+        return $this->belongsToMany(CountryVisaType::class, 'country_visa_type_required_document', 'required_document_id', 'country_visa_type_id')
+            ->withPivot(['id', 'status_mat', 'min_age', 'max_age'])
+            ->withTimestamps();
     }
 }
